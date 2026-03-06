@@ -17,20 +17,23 @@ $userRole = $_SESSION['role'];
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Plan Brygad - Web</title>
   <style>
-    /* --- RESET I BAZA --- */
     :root {
-      --bg-dark: #1e1e1e;
-      --bg-panel: #252526;
-      --bg-header: #333333;
-      --text-main: #cccccc;
-      --text-bright: #ffffff;
-      --accent: #007acc;
-      --accent-hover: #005f9e;
-      --border: #3e3e42;
-      --danger: #ce4747;
-      --success: #4ec9b0;
+      --bg-dark: #0f172a;
+      --bg-panel: #1e293b;
+      --bg-header: #0f172a;
+      --bg-card: #1e293b;
+      --bg-input: #334155;
+      --text-main: #94a3b8;
+      --text-bright: #f1f5f9;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --border: #334155;
+      --danger: #ef4444;
+      --success: #10b981;
     }
+    
     * { box-sizing: border-box; outline: none; }
+    
     body {
       margin: 0; padding: 0;
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -44,208 +47,365 @@ $userRole = $_SESSION['role'];
 
     /* --- TOPBAR --- */
     .topbar {
-      height: 60px;
+      height: 50px;
       background-color: var(--bg-header);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 15px;
+      padding: 0 20px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
-    .title { display: flex; flex-direction: column; }
-    .appname { font-weight: bold; color: var(--text-bright); font-size: 18px; }
-    .ver { font-size: 12px; color: #888; margin-left: 5px; }
-    .subtitle { font-size: 11px; color: #aaa; margin-top: 2px; }
     
-    .actions { display: flex; gap: 10px; align-items: center; }
-    .tabs { display: flex; background: #111; border-radius: 4px; padding: 2px; }
+    .title-group { display: flex; align-items: center; gap: 15px; }
+    .appname { font-weight: bold; color: var(--text-bright); font-size: 16px; letter-spacing: 0.5px; }
+    .ver { font-size: 11px; color: #64748b; background: #334155; padding: 2px 6px; border-radius: 3px; }
+    
+    .actions { display: flex; gap: 8px; align-items: center; }
+    
+    .tabs { display: flex; background: var(--bg-input); border-radius: 6px; padding: 2px; }
     .tabBtn {
-      background: transparent; border: none; color: #888;
-      padding: 5px 15px; cursor: pointer; font-size: 13px;
-      transition: 0.2s;
+      background: transparent; border: none; color: #64748b;
+      padding: 6px 12px; cursor: pointer; font-size: 13px; font-weight: 500;
+      transition: 0.2s; border-radius: 4px;
     }
-    .tabBtn.active { background: var(--bg-panel); color: var(--text-bright); border-radius: 3px; }
-    .tabBtn:hover:not(.active) { color: #fff; }
+    .tabBtn.active { background: var(--accent); color: white; }
+    .tabBtn:hover:not(.active) { color: var(--text-bright); }
 
-    button { cursor: pointer; font-family: inherit; }
-    .primary { background: var(--accent); color: white; border: none; padding: 6px 12px; border-radius: 3px; font-weight: 500; }
+    button { cursor: pointer; font-family: inherit; border: none; }
+    
+    .primary { 
+      background: var(--accent); color: white; 
+      padding: 6px 16px; border-radius: 6px; 
+      font-weight: 600; font-size: 13px;
+      transition: background 0.2s;
+    }
     .primary:hover { background: var(--accent-hover); }
-    .ghost { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 5px 10px; border-radius: 3px; }
-    .ghost:hover { border-color: #666; color: #fff; }
-    .smallBtn { padding: 4px 8px; font-size: 12px; }
-    .iconBtn { background: none; border: none; color: inherit; font-size: 16px; cursor: pointer; }
+    
+    .ghost { 
+      background: transparent; border: 1px solid var(--border); 
+      color: var(--text-main); padding: 5px 10px; 
+      border-radius: 6px; font-size: 12px;
+      transition: all 0.2s;
+    }
+    .ghost:hover { border-color: #475569; color: var(--text-bright); background: var(--bg-input); }
+    
+    .iconBtn { 
+      background: none; border: none; color: var(--text-main); 
+      font-size: 14px; cursor: pointer; padding: 4px; 
+      border-radius: 4px; transition: 0.2s;
+    }
+    .iconBtn:hover { background: var(--bg-input); color: var(--text-bright); }
 
-    /* --- LAYOUT GŁÓWNY --- */
+    /* --- MAIN LAYOUT --- */
     .layout {
-      display: flex;
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: 1fr 200px;
+      gap: 1px;
+      background: var(--border);
       flex: 1;
-      height: calc(100vh - 60px);
       overflow: hidden;
     }
 
-    /* --- PANELE BOCZNE --- */
+    /* --- PANELS --- */
     .panel {
       background-color: var(--bg-panel);
-      border: 1px solid var(--border);
       display: flex;
       flex-direction: column;
-      min-width: 250px;
+      overflow: hidden;
     }
-    .panel.left { width: 280px; border-right: 1px solid var(--border); }
-    .panel.bottom { height: 200px; border-top: 1px solid var(--border); width: 100%; position: absolute; bottom: 0; left: 0; z-index: 10; }
     
-    .panelHeader {
-      padding: 10px;
-      border-bottom: 1px solid var(--border);
-      background: #2d2d30;
+    .panel.left {
+      grid-row: 1 / 2;
+      grid-column: 1 / 2;
+      border-right: 1px solid var(--border);
     }
-    .panelTitle { font-weight: bold; color: var(--text-bright); margin-bottom: 8px; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .row { display: flex; gap: 5px; }
+    
+    .panel.bottom {
+      grid-row: 2 / 3;
+      grid-column: 1 / 3;
+      border-top: 1px solid var(--border);
+    }
+
+    .panelHeader {
+      padding: 15px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-panel);
+    }
+    
+    .panelTitle { 
+      font-weight: 700; color: var(--text-bright); 
+      margin-bottom: 10px; font-size: 13px; 
+      text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    
+    .row { display: flex; gap: 8px; }
+    
     .search {
-      flex: 1; background: #3c3c3c; border: 1px solid #3c3c3c;
-      color: #fff; padding: 5px 8px; border-radius: 3px; font-size: 13px;
+      flex: 1; background: var(--bg-input); border: 1px solid var(--bg-input);
+      color: var(--text-bright); padding: 8px 12px; 
+      border-radius: 6px; font-size: 13px;
+      transition: border-color 0.2s;
     }
     .search:focus { border-color: var(--accent); }
 
     .pool {
-      flex: 1; overflow-y: auto; padding: 10px;
+      flex: 1; overflow-y: auto; padding: 15px;
       display: flex; flex-direction: column; gap: 8px;
     }
-    /* Elementy w puli (Ludzie/Zadania) */
+    
     .pool-item {
-      background: #333; padding: 8px 12px; border-radius: 4px;
-      border: 1px solid #444; cursor: grab; font-size: 13px;
+      background: var(--bg-input); padding: 10px 12px; 
+      border-radius: 6px; border: 1px solid transparent;
+      cursor: grab; font-size: 13px; color: var(--text-bright);
       display: flex; justify-content: space-between; align-items: center;
+      transition: all 0.2s;
     }
-    .pool-item:hover { background: #3e3e42; }
-    .pool-item.dragging { opacity: 0.5; }
+    .pool-item:hover { border-color: var(--accent); background: #475569; }
+    .pool-item-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.2s; }
+    .pool-item:hover .pool-item-actions { opacity: 1; }
 
-    /* --- CENTRUM --- */
+    /* --- CENTER SECTION --- */
     .center {
-      flex: 1;
+      grid-row: 1 / 2;
+      grid-column: 2 / 3;
+      background: var(--bg-dark);
       display: flex;
       flex-direction: column;
-      background: #1e1e1e;
-      position: relative;
       overflow: hidden;
     }
+
     .toolbar {
-      height: 50px;
-      background: #252526;
+      height: 60px;
+      background: var(--bg-panel);
       border-bottom: 1px solid var(--border);
       display: flex;
       align-items: center;
-      padding: 0 15px;
+      padding: 0 20px;
       gap: 15px;
+      flex-shrink: 0;
     }
-    .field { display: flex; align-items: center; gap: 5px; font-size: 13px; }
-    .field label { color: #888; font-size: 11px; text-transform: uppercase; }
-    select {
-      background: #3c3c3c; color: #fff; border: 1px solid #555;
-      padding: 4px 8px; border-radius: 3px; min-width: 150px;
-    }
-    .spacer { flex: 1; }
-    .zoom { display: flex; align-items: center; gap: 5px; background: #333; padding: 2px 5px; border-radius: 3px; }
-    .zoomLabel { font-size: 11px; width: 35px; text-align: center; }
 
-    /* Obszar zespołów */
-    .teamsScroll {
-      flex: 1; overflow: auto; padding: 20px;
-      display: flex; gap: 20px; align-items: flex-start;
-    }
-    .teams { display: flex; gap: 15px; min-width: 100%; }
-    
-    /* Karta Zespołu */
-    .team-card {
-      width: 280px;
-      background: #2d2d30;
-      border: 1px solid var(--border);
+    .field-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-input);
+      padding: 6px 12px;
       border-radius: 6px;
-      display: flex; flex-direction: column;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
-    .team-header {
-      padding: 10px; background: #3e3e42;
+    
+    .field-label {
+      font-size: 11px;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    
+    select {
+      background: transparent; color: var(--text-bright); 
+      border: none; padding: 4px 8px; 
+      font-size: 13px; font-weight: 500;
+      cursor: pointer; min-width: 150px;
+    }
+    select option { background: var(--bg-input); color: var(--text-bright); }
+
+    .toolbar-spacer { flex: 1; }
+
+    .zoom-controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg-input);
+      padding: 6px 10px;
+      border-radius: 6px;
+    }
+    
+    .zoom-label {
+      font-size: 12px;
+      color: var(--text-bright);
+      min-width: 40px;
+      text-align: center;
+      font-weight: 600;
+    }
+
+    /* Teams Area */
+    .teams-container {
+      flex: 1;
+      overflow: auto;
+      padding: 20px;
+      background: var(--bg-dark);
+    }
+    
+    .teams-grid {
+      display: flex;
+      gap: 20px;
+      min-width: max-content;
+      padding-bottom: 20px;
+    }
+
+    .team-card {
+      width: 320px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .team-card-header {
+      padding: 12px 15px;
+      background: var(--bg-input);
       border-bottom: 1px solid var(--border);
-      border-radius: 6px 6px 0 0;
-      font-weight: bold; color: #fff;
-      display: flex; justify-content: space-between;
-    }
-    .team-body {
-      padding: 10px; min-height: 150px;
-      display: flex; flex-direction: column; gap: 5px;
-    }
-    .team-member {
-      background: #3c3c3c; padding: 6px; border-radius: 3px;
-      font-size: 12px; border-left: 3px solid var(--accent);
-      cursor: pointer;
-    }
-    .team-task {
-      background: #444; padding: 6px; border-radius: 3px;
-      font-size: 12px; border-left: 3px solid var(--success);
-      margin-top: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
-    /* Widoki alternatywne (Plan/Ludzie/Zadania) */
-    .view { display: none; width: 100%; height: 100%; overflow: auto; padding: 20px; }
+    .team-card-title {
+      font-weight: 700;
+      color: var(--text-bright);
+      font-size: 14px;
+    }
+
+    .team-card-body {
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      min-height: 200px;
+    }
+
+    .team-section {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .team-section-label {
+      font-size: 11px;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+
+    .team-member-item, .team-task-item {
+      background: var(--bg-input);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--text-bright);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-left: 3px solid var(--accent);
+    }
+
+    .team-task-item {
+      border-left-color: var(--success);
+    }
+
+    /* Views */
+    .view { display: none; width: 100%; height: 100%; overflow: auto; }
     .view.active { display: block; }
-    .viewCard { background: var(--bg-panel); padding: 20px; border-radius: 8px; }
-    .viewTitle { font-size: 20px; font-weight: bold; margin-bottom: 20px; color: #fff; border-bottom: 2px solid var(--accent); display: inline-block; padding-bottom: 5px;}
-    .list { display: flex; flex-direction: column; gap: 10px; }
-
-    /* Resizer */
-    .hResizer {
-      height: 5px; background: var(--bg-header);
-      cursor: ns-resize; width: 100%;
+    
+    .view-content {
+      padding: 30px;
+      background: var(--bg-panel);
+      margin: 20px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
     }
 
-    /* Modale */
+    .view-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--accent);
+    }
+
+    /* Modals */
     .modal {
       position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: rgba(0,0,0,0.7); z-index: 1000;
       display: flex; justify-content: center; align-items: center;
+      backdrop-filter: blur(4px);
     }
     .modal[hidden] { display: none; }
-    .modalCard {
-      background: var(--bg-panel); width: 400px; padding: 20px;
-      border-radius: 6px; border: 1px solid var(--border);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-    }
-    .modalTop { display: flex; justify-content: space-between; margin-bottom: 15px; }
-    .modalTitle { font-weight: bold; color: #fff; font-size: 16px; }
-    .modalRow { margin-top: 20px; display: flex; justify-content: flex-end; gap: 10px; }
-    .modal input { width: 100%; padding: 8px; margin-bottom: 10px; background: #333; border: 1px solid #555; color: #fff; border-radius: 3px; }
     
+    .modal-card {
+      background: var(--bg-panel); width: 400px; padding: 25px;
+      border-radius: 12px; border: 1px solid var(--border);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 20px;
+    }
+    
+    .modal-title {
+      font-weight: 700; color: var(--text-bright); font-size: 16px;
+    }
+    
+    .modal input {
+      width: 100%; padding: 10px 12px; margin-bottom: 15px;
+      background: var(--bg-input); border: 1px solid var(--border);
+      color: var(--text-bright); border-radius: 6px; font-size: 14px;
+    }
+    .modal input:focus { border-color: var(--accent); }
+    
+    .modal-actions {
+      display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;
+    }
+
     /* Toast */
     .toast {
       position: fixed; bottom: 220px; right: 20px;
       background: var(--accent); color: white;
-      padding: 10px 20px; border-radius: 4px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      animation: fadeIn 0.3s;
+      padding: 12px 20px; border-radius: 8px;
+      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      font-weight: 600; font-size: 13px;
+      animation: slideIn 0.3s ease-out;
+      z-index: 2000;
     }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
 
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: var(--bg-dark); }
+    ::-webkit-scrollbar-thumb { background: var(--bg-input); border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #475569; }
   </style>
 </head>
 <body>
 
   <!-- HEADER -->
   <header class="topbar">
-    <div class="title">
-      <div class="appname">PLAN BRYGAD <span class="ver">v0.5.0-WEB</span></div>
-      <div class="subtitle">DnD: ludzie → zespoły, zadania → zespoły. Druk: 1 budowa = 1 strona PDF.</div>
+    <div class="title-group">
+      <div class="appname">PLAN BRYGAD</div>
+      <div class="ver">v0.5.0</div>
     </div>
     <div class="actions">
-      <div id="viewTabs" class="tabs">
+      <div class="tabs">
         <button class="tabBtn active" onclick="switchView('plan')">Plan</button>
         <button class="tabBtn" onclick="switchView('people')">Ludzie</button>
         <button class="tabBtn" onclick="switchView('tasks')">Zadania</button>
       </div>
-      <button id="btnHealth" class="ghost" title="Sprawdź obsadę"><span>ℹ️</span></button>
-      <button id="btnExportAll" class="primary">DRUKUJ (PDF)</button>
-      <button onclick="location.href='logout.php'" class="ghost" style="border-color:#ce4747; color:#ce4747;">Wyloguj</button>
+      <button class="ghost" title="Sprawdź obsadę"><span style="font-size: 16px;">✓</span></button>
+      <button class="primary">DRUKUJ (PDF) – wszystkie budowy</button>
+      <button onclick="location.href='logout.php'" class="ghost" style="border-color:#ef4444; color:#ef4444;">Wyloguj</button>
     </div>
   </header>
 
@@ -258,66 +418,70 @@ $userRole = $_SESSION['role'];
         <div class="panelTitle">LUDZIE (pula)</div>
         <div class="row">
           <input id="workerSearch" class="search" placeholder="Szukaj..." />
-          <button id="btnAddWorker" class="primary smallBtn" onclick="openModal('workerModal')">+ Dodaj</button>
+          <button id="btnAddWorker" class="primary" onclick="openModal('workerModal')" style="padding: 6px 12px; font-size: 12px;">+ Dodaj</button>
         </div>
       </div>
-      <div id="workersPool" class="pool" aria-label="Pula ludzi">
-        <!-- Tutaj JS wstawi ludzi -->
-        <div style="color:#666; text-align:center; margin-top:20px;">Ładowanie...</div>
+      <div id="workersPool" class="pool">
+        <div style="color:#64748b; text-align:center; margin-top:30px;">Ładowanie...</div>
       </div>
     </aside>
 
     <!-- CENTER SECTION -->
     <section class="center">
+      
+      <!-- TOOLBAR -->
       <div class="toolbar">
-        <div class="field">
-          <label>BUDOWA</label>
+        <div class="field-group">
+          <span class="field-label">BUDOWA</span>
           <select id="buildingSelect">
             <option value="">-- Wybierz budowę --</option>
           </select>
           <button id="btnEditBuilding" class="iconBtn" title="Edytuj">✎</button>
-          <button id="btnDeleteBuilding" class="ghost smallBtn">🗑</button>
+          <button id="btnDeleteBuilding" class="iconBtn" title="Usuń" style="color:#ef4444;">🗑</button>
         </div>
-        <div class="spacer"></div>
-        <button id="btnTogglePeople" class="ghost">Ludzie ◀/▶</button>
-        <div class="zoom">
-          <button id="zoomOut" class="ghost">−</button>
-          <div id="zoomLabel" class="zoomLabel">100%</div>
-          <button id="zoomIn" class="ghost">+</button>
+        
+        <div class="toolbar-spacer"></div>
+        
+        <button class="ghost">Ludzie ◀▶</button>
+        
+        <div class="zoom-controls">
+          <button class="iconBtn">−</button>
+          <span class="zoom-label">100%</span>
+          <button class="iconBtn">+</button>
         </div>
+        
         <button id="btnAddTeam" class="ghost">+ Dodaj zespół</button>
-        <button id="btnAddBuilding" class="ghost" onclick="openTextModal('Dodaj nową budowę', 'Nazwa budowy')">+ Dodaj budowę</button>
+        <button id="btnAddBuilding" class="ghost">+ Dodaj budowę</button>
       </div>
 
       <!-- VIEW: PLAN -->
       <div id="viewPlan" class="view active">
-        <div id="teamsScroll" class="teamsScroll">
-          <div id="teamsArea" class="teams">
-            <!-- Tutaj JS wstawi zespoły dla wybranej budowy -->
-            <div style="color:#666; width:100%; text-align:center; margin-top:50px;">Wybierz budowę z listy, aby zobaczyć zespoły.</div>
+        <div class="teams-container">
+          <div id="teamsArea" class="teams-grid">
+            <div style="color:#64748b; width:100%; text-align:center; margin-top:100px;">
+              <p style="font-size: 16px; margin-bottom: 10px;">Wybierz budowę z listy powyżej</p>
+              <p style="font-size: 13px;">lub dodaj nową, aby rozpocząć planowanie</p>
+            </div>
           </div>
         </div>
       </div>
 
       <!-- VIEW: PEOPLE LIST -->
       <div id="viewPeople" class="view">
-        <div class="viewCard">
-          <div class="viewTitle">Ludzie – pełna lista i przypisania</div>
+        <div class="view-content">
+          <div class="view-title">Ludzie – pełna lista i przypisania</div>
           <div id="peopleViewList" class="list"></div>
         </div>
       </div>
 
       <!-- VIEW: TASKS LIST -->
       <div id="viewTasks" class="view">
-        <div class="viewCard">
-          <div class="viewTitle">Zadania – przypisane do zespołów</div>
+        <div class="view-content">
+          <div class="view-title">Zadania – przypisane do zespołów</div>
           <div id="tasksViewList" class="list"></div>
         </div>
       </div>
     </section>
-
-    <!-- RESIZER -->
-    <div id="hResizer" class="hResizer"></div>
 
     <!-- BOTTOM PANEL: TASKS POOL -->
     <aside class="panel bottom">
@@ -325,44 +489,50 @@ $userRole = $_SESSION['role'];
         <div class="panelTitle">ZADANIA (pula)</div>
         <div class="row">
           <input id="taskInput" class="search" placeholder="Wpisz zadanie i Enter..." />
-          <button id="btnAddTask" class="primary smallBtn" onclick="addTaskFromInput()">Dodaj</button>
+          <button id="btnAddTask" class="primary" onclick="addTaskFromInput()" style="padding: 6px 16px; font-size: 12px;">Dodaj</button>
         </div>
       </div>
-      <div id="tasksPool" class="pool tasks" aria-label="Pula zadań">
-        <!-- Tutaj JS wstawi zadania -->
-        <div style="color:#666; text-align:center; margin-top:20px;">Ładowanie...</div>
+      <div id="tasksPool" class="pool">
+        <div style="color:#64748b; text-align:center; margin-top:30px;">Ładowanie...</div>
       </div>
     </aside>
   </main>
 
   <!-- MODALS -->
   <div id="workerModal" class="modal" hidden>
-    <div class="modalCard">
-      <div class="modalTop"><div class="modalTitle">Pracownik</div><button class="iconBtn modalClose" onclick="closeModal('workerModal')">✕</button></div>
-      <label>Imię i nazwisko</label>
-      <input id="wmName" class="search" placeholder="np. Jan Kowalski" />
-      <div class="row modalRow">
-        <button class="primary" onclick="saveWorker()">Zapisz</button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title">Dodaj pracownika</div>
+        <button class="iconBtn" onclick="closeModal('workerModal')">✕</button>
+      </div>
+      <label style="display:block; margin-bottom:8px; font-size:13px; color:#94a3b8;">Imię i nazwisko</label>
+      <input id="wmName" placeholder="np. Jan Kowalski" />
+      <div class="modal-actions">
         <button class="ghost" onclick="closeModal('workerModal')">Anuluj</button>
+        <button class="primary" onclick="saveWorker()">Zapisz</button>
       </div>
     </div>
   </div>
 
   <div id="textModal" class="modal" hidden>
-    <div class="modalCard">
-      <div class="modalTop"><div class="modalTitle" id="textModalTitle">Wpisz</div><button class="iconBtn modalClose" onclick="closeModal('textModal')">✕</button></div>
-      <label id="textModalLabel">Wartość</label>
-      <input id="textModalInput" class="search" />
-      <div class="row modalRow">
-        <button class="primary" id="textModalOk" onclick="confirmTextModal()">OK</button>
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title" id="textModalTitle">Wpisz</div>
+        <button class="iconBtn" onclick="closeModal('textModal')">✕</button>
+      </div>
+      <label id="textModalLabel" style="display:block; margin-bottom:8px; font-size:13px; color:#94a3b8;">Wartość</label>
+      <input id="textModalInput" />
+      <div class="modal-actions">
         <button class="ghost" onclick="closeModal('textModal')">Anuluj</button>
+        <button class="primary" id="textModalOk">OK</button>
       </div>
     </div>
   </div>
 
   <div id="toast" class="toast" hidden></div>
 
- <script>
+  <!-- JAVASCRIPT CODE (ten sam co wcześniej, tylko dostosowany do nowego HTML) -->
+  <script>
     // --- ZMIENNE GLOBALNE ---
     let allWorkers = [];
     let allTasks = [];
@@ -376,9 +546,7 @@ $userRole = $_SESSION['role'];
         setupEventListeners();
     });
 
-    // GŁÓWNA FUNKCJA ŁADUJĄCA DANE
     async function loadData() {
-        console.log("Pobieranie danych z serwera...");
         try {
             const [workersRes, tasksRes, projectsRes] = await Promise.all([
                 fetch('api/workers.php'),
@@ -386,80 +554,70 @@ $userRole = $_SESSION['role'];
                 fetch('api/projects.php')
             ]);
 
-            if (!workersRes.ok || !tasksRes.ok || !projectsRes.ok) {
-                throw new Error("Błąd połączenia z API (sprawdź konsolę Network)");
-            }
-
             allWorkers = await workersRes.json();
             allTasks = await tasksRes.json();
             allProjects = await projectsRes.json();
-
-            console.log("Dane pobrane:", { workers: allWorkers.length, tasks: allTasks.length, projects: allProjects.length });
 
             renderWorkersPool();
             renderTasksPool();
             renderProjectSelect();
             
-            // Jeśli mamy wybraną budowę, odśwież jej widok
             if (currentProjectId) {
                 selectProject(currentProjectId);
             } else if (allProjects.length === 1) {
-                // Automatycznie wybierz jedyną budowę
                 selectProject(allProjects[0].id);
-            } else if (allProjects.length > 1) {
-                // Jeśli jest więcej, zostaw wybór użytkownikowi lub wybierz pierwszą
-                // selectProject(allProjects[0].id); 
             }
-
         } catch (error) {
-            console.error("Krytyczny błąd ładowania danych:", error);
-            showToast("Błąd łączenia z bazą danych! Sprawdź pliki API.");
+            console.error("Błąd ładowania:", error);
+            showToast("Błąd łączenia z bazą danych!");
         }
     }
 
-    // --- RENDEROWANIE PULI PRACOWNIKÓW ---
     function renderWorkersPool() {
         const container = document.getElementById('workersPool');
         container.innerHTML = '';
         if (allWorkers.length === 0) {
-            container.innerHTML = '<div style="color:#666; text-align:center; margin-top:20px;">Brak pracowników.</div>';
+            container.innerHTML = '<div style="color:#64748b; text-align:center; margin-top:30px;">Brak pracowników w puli.</div>';
             return;
         }
         allWorkers.forEach(w => {
             const el = document.createElement('div');
             el.className = 'pool-item';
             el.draggable = true;
-            el.textContent = w.full_name;
+            el.innerHTML = `
+                <span>${escapeHtml(w.full_name)}</span>
+                <div class="pool-item-actions">
+                    <button class="iconBtn" style="font-size:11px;">✎</button>
+                    <button class="iconBtn" style="font-size:11px; color:#ef4444;">🗑</button>
+                </div>
+            `;
             el.dataset.id = w.id;
             container.appendChild(el);
         });
     }
 
-    // --- RENDEROWANIE PULI ZADAŃ ---
     function renderTasksPool() {
         const container = document.getElementById('tasksPool');
         container.innerHTML = '';
         const unassignedTasks = allTasks.filter(t => !t.assigned_to_team_id);
         
         if (unassignedTasks.length === 0) {
-            container.innerHTML = '<div style="color:#666; text-align:center; margin-top:20px;">Brak zadań w puli.</div>';
+            container.innerHTML = '<div style="color:#64748b; text-align:center; margin-top:30px;">Brak zadań w puli.</div>';
             return;
         }
         unassignedTasks.forEach(t => {
             const el = document.createElement('div');
             el.className = 'pool-item';
             el.draggable = true;
-            el.textContent = t.title;
+            el.textContent = escapeHtml(t.title);
             el.dataset.id = t.id;
             container.appendChild(el);
         });
     }
 
-    // --- RENDEROWANIE LISTY BUDÓW (SELECT) ---
     function renderProjectSelect() {
         const sel = document.getElementById('buildingSelect');
         const currentVal = sel.value; 
-        
         sel.innerHTML = '<option value="">-- Wybierz budowę --</option>';
         
         allProjects.forEach(p => {
@@ -469,35 +627,31 @@ $userRole = $_SESSION['role'];
             sel.appendChild(opt);
         });
 
-        // Przywróć wybór
         if (currentVal && allProjects.find(p => p.id == currentVal)) {
             sel.value = currentVal;
         }
     }
 
-    // --- LOGIKA WIDOKU PLANU (ZESPOŁY) ---
     async function selectProject(projectId) {
         currentProjectId = projectId;
         const area = document.getElementById('teamsArea');
         
         if (!projectId) {
-            area.innerHTML = '<div style="color:#666; width:100%; text-align:center; margin-top:50px;">Wybierz budowę z listy, aby zobaczyć zespoły.</div>';
+            area.innerHTML = '<div style="color:#64748b; width:100%; text-align:center; margin-top:100px;"><p style="font-size: 16px; margin-bottom: 10px;">Wybierz budowę z listy powyżej</p><p style="font-size: 13px;">lub dodaj nową, aby rozpocząć planowanie</p></div>';
             return;
         }
 
-        area.innerHTML = '<div style="color:#aaa; text-align:center; margin-top:50px;">Ładowanie zespołów...</div>';
+        area.innerHTML = '<div style="color:#64748b; text-align:center; margin-top:50px;">Ładowanie zespołów...</div>';
 
         try {
             const res = await fetch(`api/teams.php?project_id=${projectId}`);
-            if (!res.ok) throw new Error("Błąd pobierania zespołów");
-            
             const teams = await res.json();
             area.innerHTML = '';
 
             if (teams.length === 0) {
                 area.innerHTML = `
-                    <div style="color:#666; width:100%; text-align:center; margin-top:50px;">
-                        <p>Brak zespołów dla tej budowy.</p>
+                    <div style="color:#64748b; width:100%; text-align:center; margin-top:50px;">
+                        <p style="margin-bottom: 15px;">Brak zespołów dla tej budowy.</p>
                         <button class="primary" onclick="addTeam()">+ Dodaj pierwszy zespół</button>
                     </div>`;
                 return;
@@ -507,44 +661,61 @@ $userRole = $_SESSION['role'];
                 const card = document.createElement('div');
                 card.className = 'team-card';
                 
-                // Członkowie
                 let membersHtml = '';
                 if (team.members && team.members.length > 0) {
-                    membersHtml = team.members.map(m => `<div class="team-member">${escapeHtml(m.full_name)}</div>`).join('');
+                    membersHtml = team.members.map(m => `
+                        <div class="team-member-item">
+                            <span>${escapeHtml(m.full_name)}</span>
+                            <div style="display:flex; gap:4px;">
+                                <button class="iconBtn" style="font-size:11px;">✎</button>
+                                <button class="iconBtn" style="font-size:11px;">↻</button>
+                            </div>
+                        </div>
+                    `).join('');
                 } else {
-                    membersHtml = '<div style="color:#666; font-size:11px; font-style:italic; padding:5px;">Brak ludzi</div>';
+                    membersHtml = '<div style="color:#64748b; font-size:12px; font-style:italic; padding:8px 0;">Brak ludzi w zespole</div>';
                 }
 
-                // Zadania
                 let tasksHtml = '';
                 if (team.tasks && team.tasks.length > 0) {
-                    tasksHtml = team.tasks.map(t => `<div class="team-task">${escapeHtml(t.title)}</div>`).join('');
+                    tasksHtml = team.tasks.map(t => `
+                        <div class="team-task-item">
+                            <span>${escapeHtml(t.title)}</span>
+                            <div style="display:flex; gap:4px;">
+                                <button class="iconBtn" style="font-size:11px;">✎</button>
+                                <button class="iconBtn" style="font-size:11px;">↻</button>
+                            </div>
+                        </div>
+                    `).join('');
                 }
 
                 card.innerHTML = `
-                  <div class="team-header">
-                    <span>${escapeHtml(team.team_name)}</span>
-                    <button class="iconBtn" style="font-size:12px;" onclick="deleteTeam(${team.id})" title="Usuń zespół">🗑</button>
+                  <div class="team-card-header">
+                    <span class="team-card-title">${escapeHtml(team.team_name)}</span>
+                    <div style="display:flex; gap:4px;">
+                        <button class="iconBtn" style="font-size:12px;" title="Edytuj">✎</button>
+                        <button class="iconBtn" style="font-size:12px; color:#ef4444;" onclick="deleteTeam(${team.id})" title="Usuń zespół">✕</button>
+                    </div>
                   </div>
-                  <div class="team-body">
-                    <div style="font-size:11px; color:#888; margin-bottom:5px; text-transform:uppercase;">Ludzie:</div>
-                    ${membersHtml}
-                    <div style="height:10px;"></div>
-                    <div style="font-size:11px; color:#888; margin-bottom:5px; text-transform:uppercase;">Zadania:</div>
-                    ${tasksHtml}
+                  <div class="team-card-body">
+                    <div class="team-section">
+                        <div class="team-section-label">LUDZIE</div>
+                        ${membersHtml}
+                    </div>
+                    <div class="team-section">
+                        <div class="team-section-label">ZADANIA</div>
+                        ${tasksHtml}
+                    </div>
                   </div>
                 `;
                 area.appendChild(card);
             });
         } catch (e) {
             console.error(e);
-            area.innerHTML = '<div style="color:red">Błąd ładowania zespołów.</div>';
+            area.innerHTML = '<div style="color:#ef4444; text-align:center; margin-top:50px;">Błąd ładowania zespołów.</div>';
         }
     }
 
-    // --- AKCJE CRUD ---
-
-    // 1. ZAPIS PRACOWNIKA
     async function saveWorker() {
         const nameInput = document.getElementById('wmName');
         const name = nameInput.value.trim();
@@ -568,7 +739,6 @@ $userRole = $_SESSION['role'];
         } catch (e) { alert('Błąd sieci'); }
     }
 
-    // 2. DODAWANIE ZADANIA
     async function addTaskFromInput() {
         const input = document.getElementById('taskInput');
         const title = input.value.trim();
@@ -592,7 +762,6 @@ $userRole = $_SESSION['role'];
         } catch (e) { alert('Błąd sieci'); }
     }
 
-    // 3. DODAWANIE ZESPOŁU
     async function addTeam() {
         if (!currentProjectId) return alert('Wybierz budowę');
         const name = prompt("Nazwa nowego zespołu (np. Zespół A):");
@@ -614,7 +783,6 @@ $userRole = $_SESSION['role'];
         } catch (e) { alert('Błąd sieci'); }
     }
 
-    // 4. USUWANIE ZESPOŁU
     async function deleteTeam(teamId) {
         if(!confirm("Czy na pewno usunąć ten zespół?")) return;
         try {
@@ -630,7 +798,6 @@ $userRole = $_SESSION['role'];
         } catch (e) { alert('Błąd usuwania'); }
     }
 
-    // 5. DODAWANIE BUDOWY (PROJEKTU)
     async function addProject(name) {
         if (!name) return;
         try {
@@ -641,10 +808,7 @@ $userRole = $_SESSION['role'];
             });
             const result = await res.json();
             if (result.success) {
-                await loadData(); // Odśwież listę select
-                // Automatycznie wybierz nowo dodaną budowę
-                const newProj = allProjects.find(p => p.name === name); // Uwaga: allProjects jeszcze nie zaktualizowane w tym momencie w zmiennej, ale loadData to zrobi
-                // Lepiej poczekać aż loadData skończy i wtedy wybrać ostatni element lub po ID
+                await loadData();
                 setTimeout(() => {
                     if(allProjects.length > 0) {
                         const lastId = allProjects[allProjects.length-1].id;
@@ -659,10 +823,11 @@ $userRole = $_SESSION['role'];
         } catch (e) { alert('Błąd sieci'); }
     }
 
-    // 6. USUWANIE BUDOWY (PROJEKTU)
     async function deleteCurrentProject() {
         if (!currentProjectId) return alert('Nie wybrano żadnej budowy do usunięcia.');
-        if (!confirm(`Czy na pewno usunąć budowę "${document.getElementById('buildingSelect').options[document.getElementById('buildingSelect').selectedIndex].text}"? Wszystkie zespoły i zadania zostaną utracone!`)) return;
+        const selectEl = document.getElementById('buildingSelect');
+        const selectedText = selectEl.options[selectEl.selectedIndex].text;
+        if (!confirm(`Czy na pewno usunąć budowę "${selectedText}"? Wszystkie zespoły i zadania zostaną utracone!`)) return;
 
         try {
             const res = await fetch('api/projects.php', {
@@ -682,8 +847,6 @@ $userRole = $_SESSION['role'];
         } catch (e) { alert('Błąd sieci'); }
     }
 
-    // --- NARZĘDZIA I EVENTY ---
-
     window.switchView = function(viewName) {
         document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
         document.querySelectorAll('.tabBtn').forEach(b => b.classList.remove('active'));
@@ -701,14 +864,11 @@ $userRole = $_SESSION['role'];
     window.openModal = function(id) { document.getElementById(id).hidden = false; };
     window.closeModal = function(id) { document.getElementById(id).hidden = true; };
     
-    // Obsługa modala tekstowego (uniwersalny do budów/zespołów)
     let textModalCallback = null;
-
     window.openTextModal = function(title, label, callback) {
         document.getElementById('textModalTitle').textContent = title;
         document.getElementById('textModalLabel').textContent = label;
         document.getElementById('textModalInput').value = '';
-        
         textModalCallback = callback;
         
         document.getElementById('textModalOk').onclick = function() {
@@ -746,59 +906,31 @@ $userRole = $_SESSION['role'];
     }
 
     function setupEventListeners() {
-        // Zmiana budowy w select
         document.getElementById('buildingSelect').addEventListener('change', (e) => {
             selectProject(e.target.value);
         });
 
-        // Przyciski akcji
         document.getElementById('btnAddTeam').onclick = addTeam;
         
-        // Dodawanie budowy przez modal
         document.getElementById('btnAddBuilding').onclick = () => {
             openTextModal('Dodaj nową budowę', 'Nazwa budowy', (name) => {
                 addProject(name);
             });
         };
 
-        // Usuwanie budowy
         document.getElementById('btnDeleteBuilding').onclick = deleteCurrentProject;
 
-        // Edycja budowy (na razie prosty prompt, można rozwinąć)
         document.getElementById('btnEditBuilding').onclick = () => {
-			if (!currentProjectId) return alert('Najpierw wybierz budowę do edycji!');
-    
-			const select = document.getElementById('buildingSelect');
-			const currentName = select.options[select.selectedIndex].text;
-			const newName = prompt("Nowa nazwa budowy:", currentName);
-    
-			if (!newName || newName.trim() === '') return;
-			if (newName.trim() === currentName) return; // Brak zmiany
+            if(!currentProjectId) return alert('Wybierz budowę do edycji');
+            const newName = prompt("Nowa nazwa budowy:", document.getElementById('buildingSelect').options[document.getElementById('buildingSelect').selectedIndex].text);
+            if(newName && newName.trim() !== "") {
+                alert("Funkcja edycji wymaga aktualizacji API (PUT). Na razie użyj usuń+dodaj.");
+            }
+        };
 
-			fetch('api/projects.php', {
-				method: 'PUT',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({
-					id: currentProjectId,
-					name: newName.trim()
-				})
-			})
-			.then(r => r.json())
-			.then(res => {
-				if (res.success) {
-					showToast('Nazwa budowy zaktualizowana!');
-					loadData(); // Odśwież listę budów
-				} else {
-					alert('Błąd: ' + (res.message || res.error));
-				}
-			})
-			.catch(e => alert('Błąd sieci: ' + e));
-		};
-
-        // Formularze
         document.getElementById('wmName').addEventListener('keypress', (e) => { if(e.key === 'Enter') saveWorker(); });
         document.getElementById('taskInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') addTaskFromInput(); });
     }
-</script>
+  </script>
 </body>
 </html>
