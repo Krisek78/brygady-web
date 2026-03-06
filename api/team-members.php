@@ -6,11 +6,21 @@ require_once __DIR__ . '/../config/db.php';
 $method = $_SERVER['REQUEST_METHOD'];
 
 // Pobranie przypisañ dla lewej puli (filtrowanie)
-if ($method === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get_all_assigned') {
+/*if ($method === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get_all_assigned') {
     $stmt = $pdo->query("SELECT employee_id FROM team_members");
     $ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
     echo json_encode(['assigned_ids' => array_map('intval', $ids)]);
     exit;
+}
+*/
+
+if ($method === 'GET') {
+    if (isset($_GET['action']) && $_GET['action'] === 'get_all_assigned') {
+        $stmt = $pdo->query("SELECT employee_id FROM team_members");
+        $ids = $stmt->fetchAll(PDO::FETCH_COLUMN);
+        echo json_encode(['assigned_ids' => array_map('intval', $ids)]);
+        exit;
+    }
 }
 
 // Dane dla widoku "Ludzie"

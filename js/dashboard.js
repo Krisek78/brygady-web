@@ -250,30 +250,40 @@ window.showToast = (msg) => { const t=document.getElementById('toast'); t.textCo
 function escapeHtml(t){ if(!t)return t; return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
 
 function setupEventListeners() {
-    // Wybór budowy
-    document.getElementById('buildingSelect').onchange = (e) => selectProject(e.target.value);
+    const bSelect = document.getElementById('buildingSelect');
+    if(bSelect) bSelect.onchange = (e) => selectProject(e.target.value);
     
-    // Obsługa zakładek (Tabs)
-    document.querySelectorAll('.tabBtn').forEach(btn => {
-        btn.onclick = (e) => switchView(e.target.dataset.view);
-    });
+    const btnTeam = document.getElementById('btnAddTeam');
+    if(btnTeam) btnTeam.onclick = () => addTeam();
+    
+    const btnBuilding = document.getElementById('btnAddBuilding');
+    if(btnBuilding) {
+        btnBuilding.onclick = () => {
+            openTextModal('Dodaj budowę', 'Nazwa nowej budowy', (name) => addProject(name));
+        };
+    }
+    
+    const btnDeleteB = document.getElementById('btnDeleteBuilding');
+    if(btnDeleteB) btnDeleteB.onclick = () => deleteCurrentProject();
 
-    // Przyciski akcji
-    document.getElementById('btnAddTeam').onclick = () => addTeam();
-    document.getElementById('btnAddBuilding').onclick = () => {
-        openTextModal('Dodaj budowę', 'Nazwa nowej budowy', (name) => addProject(name));
-    };
+    const btnEditB = document.getElementById('btnEditBuilding');
+    if(btnEditB) btnEditB.onclick = () => editProjectName();
+
+    const btnResetP = document.getElementById('btnResetProject');
+    if(btnResetP) btnResetP.onclick = () => resetProject();
     
-    document.getElementById('btnDeleteBuilding').onclick = () => deleteCurrentProject();
-    document.getElementById('btnEditBuilding').onclick = () => editProjectName();
-    document.getElementById('btnResetProject').onclick = () => resetProject();
+    const btnWorker = document.getElementById('btnAddWorker');
+    if(btnWorker) btnWorker.onclick = () => openModal('workerModal');
+
+    const btnModalOk = document.getElementById('textModalOk');
+    if(btnModalOk) btnModalOk.onclick = () => confirmTextModal();
     
-    // Przyciski Modalowe
-    document.getElementById('btnAddWorker').onclick = () => openModal('workerModal');
-    document.getElementById('textModalOk').onclick = () => confirmTextModal();
-    
-    // Filtrowanie i Formularze
-    document.getElementById('workerSearch').addEventListener('input', filterWorkers);
-    document.getElementById('wmName').onkeypress = (e) => { if(e.key === 'Enter') saveWorker(); };
-    document.getElementById('taskInput').onkeypress = (e) => { if(e.key === 'Enter') addTaskFromInput(); };
+    const wSearch = document.getElementById('workerSearch');
+    if(wSearch) wSearch.addEventListener('input', filterWorkers);
+
+    const wmInput = document.getElementById('wmName');
+    if(wmInput) wmInput.onkeypress = (e) => { if(e.key === 'Enter') saveWorker(); };
+
+    const tInput = document.getElementById('taskInput');
+    if(tInput) tInput.onkeypress = (e) => { if(e.key === 'Enter') addTaskFromInput(); };
 }
