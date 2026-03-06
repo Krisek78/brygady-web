@@ -1,0 +1,261 @@
+let allWorkers = [];
+let allTasks = [];
+let allProjects = [];
+let currentProjectId = null;
+let assignedWorkerIds = new Set();
+let draggedItem = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    setupEventListeners();
+});
+
+async function loadData() {
+    try {
+        const [wRes, tRes, pRes, aRes] = await Promise.all([
+            fetch('api/workers.php'),
+            fetch('api/tasks.php'),
+            fetch('api/projects.php'),
+            fetch('api/team-members.php?action=get_all_assigned')
+        ]);
+        allWorkers = await wRes.json();
+        allTasks = await tRes.json();
+        allProjects = await pRes.json();
+        const aData = await aRes.json();
+        assignedWorkerIds = new Set(aData.assigned_ids || []);
+
+        renderWorkersPool();
+        renderTasksPool();
+        renderProjectSelect();
+        if (currentProjectId) selectProject(currentProjectId);
+    } catch (e) { showToast("Błąd ładowania danych!"); }
+}
+
+function renderWorkersPool() {
+    const container = document.getElementById('workersPool');
+    container.innerHTML = '';
+    const available = allWorkers.filter(w => !assignedWorkerIds.has(w.id));
+    available.forEach(w => container.appendChild(createDraggable(w.full_name, 'worker', w.id)));
+}
+
+function renderTasksPool() {
+    const container = document.getElementById('tasksPool');
+    container.innerHTML = '';
+    allTasks.filter(t => !t.assigned_to_team_id).forEach(t => container.appendChild(createDraggable(t.title, 'task', t.id)));
+}
+
+function createDraggable(text, type, id) {
+    const el = document.createElement('div');
+    el.className = 'pool-item';
+    el.draggable = true;
+    el.textContent = text;
+    el.dataset.id = id;
+    el.dataset.type = type;
+    el.addEventListener('dragstart', (e) => {
+        draggedItem = { id, type };
+        e.dataTransfer.setData('text/plain', JSON.stringify(draggedItem));
+    });
+    return el;
+}
+
+function renderProjectSelect() {
+    const sel = document.getElementById('buildingSelect');
+    sel.innerHTML = '<option value="">-- Wybierz budowę --</option>';
+    allProjects.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id; opt.textContent = p.name;
+        sel.appendChild(opt);
+    });
+    if (currentProjectId) sel.value = currentProjectId;
+}
+
+async function selectProject(projectId) {
+    currentProjectId = projectId;
+    const area = document.getElementById('teamsArea');
+    if (!projectId) { area.innerHTML = "Wybierz budowę..."; return; }
+    
+    const res = await fetch(`api/teams.php?project_id=${projectId}`);
+    const teams = await res.json();
+    area.innerHTML = '';
+
+    teams.forEach(team => {
+        const card = document.createElement('div');
+        card.className = 'team-card';
+        card.innerHTML = `
+            <div class="team-card-header"><b>${team.team_name}</b><button onclick="deleteTeam(${team.id})">✕</button></div>
+            <div class="team-card-body">
+                <div class="drop-zone" data-type="worker" data-team-id="${team.id}">
+                    ${(team.members || []).map(m => `<div class="team-member-item">${m.full_name}<button onclick="removeFromTeam('worker',${m.id},${team.id})">↻</button></div>`).join('')}
+                </div>
+                <div class="drop-zone" data-type="task" data-team-id="${team.id}">
+                    ${(team.tasks || []).map(t => `<div class="team-task-item">${t.title}<button onclick="removeFromTeam('task',${t.id},${team.id})">↻</button></div>`).join('')}
+                </div>
+            </div>`;
+        card.querySelectorAll('.drop-zone').forEach(z => {
+            z.addEventListener('dragover', e => e.preventDefault());
+            z.addEventListener('drop', handleDrop);
+        });
+        area.appendChild(card);
+    });
+}
+
+async function handleDrop(e) {
+    e.preventDefault();
+    const teamId = e.currentTarget.dataset.teamId;
+    const type = e.currentTarget.dataset.type;
+    if (draggedItem.type !== type) return;
+
+    const url = type === 'worker' ? 'api/team-members.php' : 'api/tasks.php';
+    const body = type === 'worker' ? { team_id: teamId, employee_id: draggedItem.id } : { id: draggedItem.id, assigned_to_team_id: teamId };
+    
+    await fetch(url, { method: type === 'worker' ? 'POST' : 'PUT', body: JSON.stringify(body) });
+    loadData();
+}
+
+async function removeFromTeam(type, id, teamId) {
+    const url = type === 'worker' ? 'api/team-members.php' : 'api/tasks.php';
+    const body = type === 'worker' ? { team_id: teamId, employee_id: id } : { id: id, assigned_to_team_id: null };
+    await fetch(url, { method: type === 'worker' ? 'DELETE' : 'PUT', body: JSON.stringify(body) });
+    loadData();
+}
+
+// Obsługa UI i Modali
+function switchView(v) {
+    document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+    document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1)).classList.add('active');
+}
+function openModal(id) { document.getElementById(id).hidden = false; }
+function closeModal(id) { document.getElementById(id).hidden = true; }
+function showToast(m) { const t = document.getElementById('toast'); t.textContent = m; t.hidden = false; setTimeout(() => t.hidden = true, 3000); }
+
+/* STARA FORMUŁA !!
+function setupEventListeners() {
+    document.getElementById('buildingSelect').onchange = (e) => selectProject(e.target.value);
+    document.getElementById('btnAddBuilding').onclick = () => openTextModal('Dodaj budowę', 'Nazwa', (n) => addProject(n));
+    document.getElementById('btnResetProject').onclick = () => resetProject();
+	// DODANO TO: Nasłuchiwanie wpisywania w wyszukiwarce pracowników
+    const workerSearch = document.getElementById('workerSearch');
+    if (workerSearch) {
+        workerSearch.addEventListener('input', filterWorkers);
+    }
+
+    // DODAĆ TO JEŚLI ZADANIA MAJĄ BYĆ FILTROWANE: Nasłuchiwanie wpisywania w wyszukiwarce zadań (na dole)
+    //const taskSearch = document.getElementById('taskInput');
+    //if (taskSearch) {
+    //    taskSearch.addEventListener('input', filterTasks);
+    //}
+}
+*/
+function setupEventListeners() {
+    // 1. Wybór budowy
+    const buildingSelect = document.getElementById('buildingSelect');
+    if (buildingSelect) {
+        buildingSelect.onchange = (e) => selectProject(e.target.value);
+    }
+
+    // 2. Dodawanie zespołu (WAŻNE: używamy funkcji anonimowej () => )
+    const btnAddTeam = document.getElementById('btnAddTeam');
+    if (btnAddTeam) {
+        btnAddTeam.onclick = () => addTeam();
+    }
+
+    // 3. Dodawanie budowy (WAŻNE: tutaj często powstaje błąd wywołania)
+    const btnAddBuilding = document.getElementById('btnAddBuilding');
+    if (btnAddBuilding) {
+        btnAddBuilding.onclick = () => {
+            openTextModal('Dodaj budowę', 'Nazwa nowej budowy', (name) => {
+                addProject(name);
+            });
+        };
+    }
+
+    // 4. Usuwanie i edycja budowy
+    const btnDeleteBuilding = document.getElementById('btnDeleteBuilding');
+    if (btnDeleteBuilding) {
+        btnDeleteBuilding.onclick = () => deleteCurrentProject();
+    }
+
+    const btnEditBuilding = document.getElementById('btnEditBuilding');
+    if (btnEditBuilding) {
+        btnEditBuilding.onclick = () => editProjectName();
+    }
+
+    const btnResetProject = document.getElementById('btnResetProject');
+    if (btnResetProject) {
+        btnResetProject.onclick = () => resetProject();
+    }
+
+    // 5. Filtrowanie (NOWE)
+    const workerSearch = document.getElementById('workerSearch');
+    if (workerSearch) {
+        workerSearch.addEventListener('input', filterWorkers);
+    }
+
+    // 6. Formularze (Enter w polach tekstowych)
+    const wmName = document.getElementById('wmName');
+    if (wmName) {
+        wmName.onkeypress = (e) => { if(e.key === 'Enter') saveWorker(); };
+    }
+
+    const taskInput = document.getElementById('taskInput');
+    if (taskInput) {
+        taskInput.onkeypress = (e) => { if(e.key === 'Enter') addTaskFromInput(); };
+    }
+}
+
+
+async function addProject(n) {
+    await fetch('api/projects.php', { method: 'POST', body: JSON.stringify({ name: n }) });
+    loadData();
+}
+
+function openTextModal(title, label, cb) {
+    document.getElementById('textModalTitle').textContent = title;
+    document.getElementById('textModalOk').onclick = () => { cb(document.getElementById('textModalInput').value); closeModal('textModal'); };
+    openModal('textModal');
+}
+// --- FUNKCJA FILTROWANIA PRACOWNIKÓW ---
+/* STARA 
+function filterWorkers() {
+    const searchTerm = document.getElementById('workerSearch').value.toLowerCase();
+    const items = document.querySelectorAll('#workersPool .pool-item');
+
+    items.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            item.style.display = 'flex'; // Pokaż
+        } else {
+            item.style.display = 'none'; // Ukryj
+        }
+    });
+}
+*/
+
+function filterWorkers() {
+    const searchInput = document.getElementById('workerSearch');
+    if (!searchInput) return;
+
+    const searchTerm = searchInput.value.toLowerCase();
+    const items = document.querySelectorAll('#workersPool .pool-item');
+
+    items.forEach(item => {
+        // Pobieramy tylko tekst imienia, pomijając przyciski akcji jeśli są w środku
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(searchTerm) ? 'flex' : 'none';
+    });
+}
+
+// --- FUNKCJA FILTROWANIA ZADAŃ (czy ma być ??) ---
+//function filterTasks() {
+//    const searchTerm = document.getElementById('taskInput').value.toLowerCase();
+//    const items = document.querySelectorAll('#tasksPool .pool-item');
+//
+//    items.forEach(item => {
+//        const text = item.textContent.toLowerCase();
+//        if (text.includes(searchTerm)) {
+//           item.style.display = 'flex';
+//        } else {
+//            item.style.display = 'none';
+//        }
+//    });
+//}
