@@ -1,0 +1,319 @@
+/* --- ZMIENNE I PODSTAWA --- */
+:root {
+  --bg-dark: #0f172a;
+  --bg-panel: #1e293b;
+  --bg-header: #0f172a;
+  --bg-card: #1e293b;
+  --bg-input: #334155;
+  --text-main: #94a3b8;
+  --text-bright: #f1f5f9;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --border: #334155;
+  --danger: #ef4444;
+  --success: #10b981;
+  --warning: #f59e0b;
+}
+
+* { box-sizing: border-box; outline: none; }
+
+body {
+  margin: 0; padding: 0;
+  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: var(--bg-dark);
+  color: var(--text-main);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* --- TOPBAR --- */
+.topbar {
+  height: 50px;
+  background-color: var(--bg-header);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.title-group { display: flex; align-items: center; gap: 15px; }
+.appname { font-weight: bold; color: var(--text-bright); font-size: 16px; letter-spacing: 0.5px; }
+.ver { font-size: 11px; color: #64748b; background: #334155; padding: 2px 6px; border-radius: 3px; }
+
+.actions { display: flex; gap: 12px; align-items: center; }
+
+.tabs { display: flex; background: var(--bg-input); border-radius: 6px; padding: 2px; }
+.tabBtn {
+  background: transparent; border: none; color: #64748b;
+  padding: 6px 14px; cursor: pointer; font-size: 13px; font-weight: 500;
+  transition: 0.2s; border-radius: 4px;
+}
+.tabBtn.active { background: var(--accent); color: white; }
+.tabBtn:hover:not(.active) { color: var(--text-bright); }
+
+/* --- PRZYCISKI --- */
+button { cursor: pointer; font-family: inherit; border: none; transition: 0.2s; }
+
+.primary { 
+  background: var(--accent); color: white; 
+  padding: 6px 16px; border-radius: 6px; 
+  font-weight: 600; font-size: 13px;
+}
+.primary:hover { background: var(--accent-hover); }
+
+.ghost { 
+  background: transparent; border: 1px solid var(--border); 
+  color: var(--text-main); padding: 5px 12px; 
+  border-radius: 6px; font-size: 12px;
+}
+.ghost:hover { border-color: #475569; color: var(--text-bright); background: var(--bg-input); }
+
+.iconBtn { 
+  background: none; border: none; color: var(--text-main); 
+  font-size: 14px; cursor: pointer; padding: 4px; 
+  border-radius: 4px; display: flex; align-items: center; justify-content: center;
+}
+.iconBtn:hover { background: var(--bg-input); color: var(--text-bright); }
+
+/* --- UKŁAD GŁÓWNY (GRID) --- */
+.layout {
+  display: grid;
+  grid-template-columns: 300px 1fr; /* Kolumna lewa: 300px, Kolumna prawa: reszta */
+  grid-template-rows: 1fr 250px;    /* Wiersz górny: elastyczny, Wiersz dolny: 250px */
+  gap: 1px;
+  background: var(--border);
+  flex: 1;
+  overflow: hidden;
+}
+
+/* --- PANELE (POZYCJONOWANIE GRID) --- */
+.panel {
+  background-color: var(--bg-panel);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel.left {
+  grid-column: 1 / 2; /* Pierwsza kolumna */
+  grid-row: 1 / 2;    /* Górny wiersz */
+  border-right: 1px solid var(--border);
+}
+
+.center {
+  grid-column: 2 / 3; /* Druga kolumna */
+  grid-row: 1 / 2;    /* Górny wiersz */
+  background: var(--bg-dark);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel.bottom {
+  grid-column: 1 / 3; /* ROZCIĄGNIĘCIE NA CAŁĄ SZEROKOŚĆ (od 1 do 3 linii) */
+  grid-row: 2 / 3;    /* Dolny wiersz */
+  border-top: 1px solid var(--border);
+}
+
+/* --- NAGŁÓWKI PANELI --- */
+.panelHeader {
+  padding: 15px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.panelTitle { 
+  font-weight: 700; color: var(--text-bright); 
+  margin-bottom: 10px; font-size: 13px; 
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+.row { display: flex; gap: 8px; }
+
+.search {
+  flex: 1; background: var(--bg-input); border: 1px solid var(--border);
+  color: var(--text-bright); padding: 8px 12px; 
+  border-radius: 6px; font-size: 13px;
+}
+.search:focus { border-color: var(--accent); }
+
+/* --- PULA (LISTA ELEMENTÓW) --- */
+.pool {
+  flex: 1; overflow-y: auto; padding: 15px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+
+.pool-item {
+  background: var(--bg-input); padding: 10px 12px; 
+  border-radius: 6px; border: 1px solid transparent;
+  cursor: grab; font-size: 13px; color: var(--text-bright);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.pool-item:hover { border-color: var(--accent); background: #475569; }
+.pool-item:active { cursor: grabbing; }
+
+/* --- TOOLBAR (BUDOWA SELECT) --- */
+.toolbar {
+  height: 60px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 15px;
+  flex-shrink: 0;
+}
+
+.field-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-input);
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.field-label {
+  font-size: 11px; color: #64748b;
+  text-transform: uppercase; font-weight: 600;
+}
+
+select {
+  background: transparent; color: var(--text-bright); 
+  border: none; padding: 4px 8px; font-size: 13px;
+  cursor: pointer; min-width: 150px;
+}
+
+.toolbar-spacer { flex: 1; }
+
+.zoom-controls {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--bg-input); padding: 6px 10px; border-radius: 6px;
+}
+
+.zoom-label { font-size: 12px; color: var(--text-bright); font-weight: 600; }
+
+/* --- KARTY ZESPOŁÓW --- */
+.teams-container {
+  flex: 1; overflow: auto; padding: 20px; background: var(--bg-dark);
+}
+
+.teams-grid {
+  display: flex; gap: 20px; min-width: max-content; padding-bottom: 20px;
+}
+
+.team-card {
+  width: 300px; background: var(--bg-card);
+  border: 1px solid var(--border); border-radius: 8px;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+
+.team-card-header {
+  padding: 12px 15px; background: var(--bg-input);
+  border-bottom: 1px solid var(--border);
+  display: flex; justify-content: space-between; align-items: center;
+}
+
+.team-card-title { font-weight: 700; color: var(--text-bright); font-size: 14px; }
+
+.team-card-body { padding: 15px; display: flex; flex-direction: column; gap: 15px; min-height: 150px; }
+
+.team-section-label {
+  font-size: 10px; color: #64748b; text-transform: uppercase;
+  font-weight: 700; margin-bottom: 6px;
+}
+
+.drop-zone {
+  min-height: 40px; border: 1px dashed transparent;
+  border-radius: 6px; display: flex; flex-direction: column; gap: 5px;
+}
+
+.team-member-item, .team-task-item {
+  background: #0f172a; padding: 8px 10px; border-radius: 6px;
+  font-size: 12px; color: var(--text-bright);
+  display: flex; justify-content: space-between; align-items: center;
+  border-left: 3px solid var(--accent);
+}
+.team-task-item { border-left-color: var(--success); }
+
+/* --- WIDOKI ALTERNATYWNE --- */
+.view { display: none; width: 100%; height: 100%; overflow: auto; }
+.view.active { display: block; }
+.view-content { padding: 30px; background: var(--bg-panel); margin: 20px; border-radius: 8px; }
+.view-title { font-size: 18px; font-weight: 700; color: var(--text-bright); margin-bottom: 20px; }
+
+.list { display: flex; flex-direction: column; gap: 8px; }
+
+/* --- MODALE --- */
+.modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8); z-index: 1000;
+  display: flex; justify-content: center; align-items: center;
+}
+.modal[hidden] { display: none; }
+
+.modal-card {
+  background: var(--bg-panel); width: 350px; padding: 25px;
+  border-radius: 12px; border: 1px solid var(--border);
+}
+
+.modal-header { display: flex; justify-content: space-between; margin-bottom: 15px; color: #fff; }
+
+.modal-card input {
+  width: 100%; padding: 10px; margin-bottom: 15px;
+  background: var(--bg-input); border: 1px solid var(--border);
+  color: #fff; border-radius: 6px;
+}
+
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; }
+
+/* --- POWIADOMIENIA (TOAST) --- */
+.toast {
+  position: fixed; bottom: 220px; right: 20px;
+  background: var(--accent); color: white;
+  padding: 10px 20px; border-radius: 8px;
+  font-size: 13px; font-weight: 600; z-index: 2000;
+  box-shadow: 0 10px 15px rgba(0,0,0,0.3);
+}
+
+/* --- SCROLLBAR --- */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-dark); }
+::-webkit-scrollbar-thumb { background: var(--bg-input); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+/* --- POPRAWKA WIDOCZNOŚCI LISTY ROZWIJANEJ --- */
+select {
+  background-color: var(--bg-input); /* Ciemniejsze tło pasujące do interfejsu */
+  color: #ffffff;                   /* Biały tekst na samym przycisku */
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 200px;
+  border-radius: 6px;
+  appearance: none;                 /* Usuwa domyślny wygląd systemowy */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 16px;
+  padding-right: 35px;
+}
+
+/* Stylizacja elementów na rozwijanej liście */
+select option {
+  background-color: #1e293b;        /* Bardzo ciemne tło listy */
+  color: #ffffff;                   /* Biały tekst budów */
+  padding: 10px;
+}
+
+/* Dodatkowe zabezpieczenie dla przeglądarek, które wymuszają białe tło */
+select:focus {
+  border-color: var(--accent);
+  outline: none;
+}
