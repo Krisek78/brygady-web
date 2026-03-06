@@ -275,7 +275,7 @@ $userRole = $_SESSION['role'];
           <select id="buildingSelect">
             <option value="">-- Wybierz budowę --</option>
           </select>
-          <button id="btnEditBuilding" class="ghost smallBtn">✎</button>
+          <button id="btnEditBuilding" class="iconBtn" title="Edytuj">✎</button>
           <button id="btnDeleteBuilding" class="ghost smallBtn">🗑</button>
         </div>
         <div class="spacer"></div>
@@ -766,13 +766,34 @@ $userRole = $_SESSION['role'];
 
         // Edycja budowy (na razie prosty prompt, można rozwinąć)
         document.getElementById('btnEditBuilding').onclick = () => {
-            if(!currentProjectId) return alert('Wybierz budowę do edycji');
-            const newName = prompt("Nowa nazwa budowy:", document.getElementById('buildingSelect').options[document.getElementById('buildingSelect').selectedIndex].text);
-            if(newName && newName.trim() !== "") {
-                // Tutaj trzeba by dodać endpoint PUT w projects.php, na razie tylko alert
-                alert("Funkcja edycji wymaga aktualizacji API (PUT). Na razie użyj usuń+dodaj.");
-            }
-        };
+			if (!currentProjectId) return alert('Najpierw wybierz budowę do edycji!');
+    
+			const select = document.getElementById('buildingSelect');
+			const currentName = select.options[select.selectedIndex].text;
+			const newName = prompt("Nowa nazwa budowy:", currentName);
+    
+			if (!newName || newName.trim() === '') return;
+			if (newName.trim() === currentName) return; // Brak zmiany
+
+			fetch('api/projects.php', {
+				method: 'PUT',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({
+					id: currentProjectId,
+					name: newName.trim()
+				})
+			})
+			.then(r => r.json())
+			.then(res => {
+				if (res.success) {
+					showToast('Nazwa budowy zaktualizowana!');
+					loadData(); // Odśwież listę budów
+				} else {
+					alert('Błąd: ' + (res.message || res.error));
+				}
+			})
+			.catch(e => alert('Błąd sieci: ' + e));
+		};
 
         // Formularze
         document.getElementById('wmName').addEventListener('keypress', (e) => { if(e.key === 'Enter') saveWorker(); });
