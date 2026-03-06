@@ -3,6 +3,7 @@ session_start();
 if (!defined('APP_INIT')) define('APP_INIT', true);
 require_once __DIR__ . '/config/db.php';
 
+// Sprawdzenie sesji (odkomentuj w produkcji)
 if (!isset($_SESSION['user_id'])) {
     header("Location: index_login.php");
     exit;
@@ -404,7 +405,7 @@ $userRole = $_SESSION['role'];
         <button class="tabBtn" onclick="switchView('tasks')">Zadania</button>
       </div>
       <button class="ghost" title="Sprawdź obsadę"><span style="font-size: 16px;">✓</span></button>
-      <button class="primary">DRUKUJ (PDF) – wszystkie budowy</button>
+      <button class="primary">DRUKUJ (PDF)</button>
       <button onclick="location.href='logout.php'" class="ghost" style="border-color:#ef4444; color:#ef4444;">Wyloguj</button>
     </div>
   </header>
@@ -437,6 +438,10 @@ $userRole = $_SESSION['role'];
             <option value="">-- Wybierz budowę --</option>
           </select>
           <button id="btnEditBuilding" class="iconBtn" title="Edytuj">✎</button>
+		  <!-- Wewnątrz <div class="field-group"> lub tuż obok niej -->
+			<button id="btnResetProject" class="ghost" style="border-color:#f59e0b; color:#f59e0b;" title="Usuń wszystkich ludzi i zadania z zespołów tej budowy">
+				🗑 Wyczyść przypisania
+			</button>
           <button id="btnDeleteBuilding" class="iconBtn" title="Usuń" style="color:#ef4444;">🗑</button>
         </div>
         
@@ -531,59 +536,88 @@ $userRole = $_SESSION['role'];
 
   <div id="toast" class="toast" hidden></div>
 
-  <!-- JAVASCRIPT CODE (ten sam co wcześniej, tylko dostosowany do nowego HTML) -->
-<script>
+  <!-- JAVASCRIPT CODE -->
+  <script>
     let allWorkers = [];
     let allTasks = [];
     let allProjects = [];
     let currentProjectId = null;
     
-    // Zmienne do Drag & Drop
+    // Zbiór ID pracowników przypisanych w aktualnie wybranym projekcie
+    let assignedWorkerIds = new Set();
+
     let draggedItem = null;
-    let draggedType = null; // 'worker' lub 'task'
 
     document.addEventListener('DOMContentLoaded', () => {
         loadData();
         setupEventListeners();
     });
+//
+async function getAllAssignedWorkers() {
+    try {
+        const res = await fetch('api/team-members.php?action=get_all_assigned');
+        const data = await res.json();
+        return data.assigned_ids || [];
+    } catch (e) {
+        console.error('Błąd pobierania przypisanych pracowników:', e);
+        return [];
+    }
+}
 
-    async function loadData() {
-        try {
-            const [workersRes, tasksRes, projectsRes] = await Promise.all([
-                fetch('api/workers.php'),
-                fetch('api/tasks.php'),
-                fetch('api/projects.php')
-            ]);
+//
+async function loadData() {
+    try {
+        // Pobieramy wszystkie dane jednocześnie
+        const [workersRes, tasksRes, projectsRes, assignedRes] = await Promise.all([
+            fetch('api/workers.php'),
+            fetch('api/tasks.php'),
+            fetch('api/projects.php'),
+            fetch('api/team-members.php?action=get_all_assigned')
+        ]);
 
-            allWorkers = await workersRes.json();
-            allTasks = await tasksRes.json();
-            allProjects = await projectsRes.json();
+        allWorkers = await workersRes.json();
+        allTasks = await tasksRes.json();
+        allProjects = await projectsRes.json();
+        
+        // Aktualizujemy globalną listę przypisanych pracowników
+        assignedWorkerIds = new Set(await assignedRes.json().assigned_ids || []);
 
-            renderWorkersPool();
-            renderTasksPool();
-            renderProjectSelect();
-            
-            if (currentProjectId) selectProject(currentProjectId);
-            else if (allProjects.length === 1) selectProject(allProjects[0].id);
-        } catch (error) {
-            console.error("Błąd ładowania:", error);
-            showToast("Błąd łączenia z bazą danych!");
-        }
+        renderWorkersPool();
+        renderTasksPool();
+        renderProjectSelect();
+        
+        if (currentProjectId) selectProject(currentProjectId);
+        else if (allProjects.length === 1) selectProject(allProjects[0].id);
+    } catch (error) {
+        console.error("Błąd ładowania:", error);
+        showToast("Błąd łączenia z bazą danych!");
+    }
+}
+//
+
+    // --- RENDEROWANIE PULI PRACOWNIKÓW (Z FILTROWANIEM) ---
+function renderWorkersPool() {
+    const container = document.getElementById('workersPool');
+    container.innerHTML = '';
+
+    if (allWorkers.length === 0) {
+        container.innerHTML = '<div style="color:#64748b; text-align:center; margin-top:30px;">Brak pracowników w bazie.</div>';
+        return;
     }
 
-    // --- RENDEROWANIE Z OBSŁUGĄ DRAG START ---
-    function renderWorkersPool() {
-        const container = document.getElementById('workersPool');
-        container.innerHTML = '';
-        if (allWorkers.length === 0) {
-            container.innerHTML = '<div style="color:#64748b; text-align:center; margin-top:30px;">Brak pracowników.</div>';
-            return;
-        }
-        allWorkers.forEach(w => {
-            const el = createDraggableElement(w.full_name, 'worker', w.id);
-            container.appendChild(el);
-        });
+    // Filtrujemy pracowników, którzy NIE są przypisani do żadnego zespołu w żadnym projekcie
+    const availableWorkers = allWorkers.filter(w => !assignedWorkerIds.has(w.id));
+
+    if (availableWorkers.length === 0) {
+        container.innerHTML = '<div style="color:#64748b; text-align:center; margin-top:30px;">Wszyscy pracownicy są przydzieleni do jakiejś budowy!</div>';
+        return;
     }
+
+    availableWorkers.forEach(w => {
+        const el = createDraggableElement(w.full_name, 'worker', w.id);
+        container.appendChild(el);
+    });
+}
 
     function renderTasksPool() {
         const container = document.getElementById('tasksPool');
@@ -600,7 +634,6 @@ $userRole = $_SESSION['role'];
         });
     }
 
-    // Helper do tworzenia elementów do przeciągania
     function createDraggableElement(text, type, id) {
         const el = document.createElement('div');
         el.className = 'pool-item';
@@ -609,7 +642,6 @@ $userRole = $_SESSION['role'];
         el.dataset.id = id;
         el.dataset.type = type;
 
-        // ZDARZENIE: Rozpoczęcie przeciągania
         el.addEventListener('dragstart', (e) => {
             draggedItem = { id: id, type: type };
             e.dataTransfer.setData('text/plain', JSON.stringify(draggedItem));
@@ -638,13 +670,17 @@ $userRole = $_SESSION['role'];
         if (currentVal && allProjects.find(p => p.id == currentVal)) sel.value = currentVal;
     }
 
-    // --- RENDEROWANIE ZESPOŁÓW Z OBSŁUGĄ DROP ---
+    // --- RENDEROWANIE ZESPOŁÓW I AKTUALIZACJA PULI ---
     async function selectProject(projectId) {
         currentProjectId = projectId;
         const area = document.getElementById('teamsArea');
         
+        // Resetuj zbiór przypisanych przed załadowaniem nowych
+        assignedWorkerIds.clear();
+
         if (!projectId) {
             area.innerHTML = '<div style="color:#64748b; width:100%; text-align:center; margin-top:100px;"><p>Wybierz budowę...</p></div>';
+            renderWorkersPool(); // Odśwież pulę (pokazując wszystkich)
             return;
         }
 
@@ -654,6 +690,16 @@ $userRole = $_SESSION['role'];
             const res = await fetch(`api/teams.php?project_id=${projectId}`);
             const teams = await res.json();
             area.innerHTML = '';
+
+            // 1. Zbierz ID wszystkich pracowników przypisanych w tym projekcie
+            teams.forEach(team => {
+                if (team.members && team.members.length > 0) {
+                    team.members.forEach(m => assignedWorkerIds.add(m.id));
+                }
+            });
+
+            // 2. Odśwież lewy panel (ukryj przypisanych)
+            renderWorkersPool();
 
             if (teams.length === 0) {
                 area.innerHTML = `<div style="text-align:center; margin-top:50px;"><button class="primary" onclick="addTeam()">+ Dodaj zespół</button></div>`;
@@ -665,7 +711,6 @@ $userRole = $_SESSION['role'];
                 card.className = 'team-card';
                 card.dataset.teamId = team.id;
 
-                // Sekcja Ludzie
                 let membersHtml = '';
                 if (team.members && team.members.length > 0) {
                     membersHtml = team.members.map(m => createTeamItemHtml(m.full_name, 'worker', m.id, team.id)).join('');
@@ -673,7 +718,6 @@ $userRole = $_SESSION['role'];
                     membersHtml = '<div style="color:#64748b; font-size:12px; padding:8px;">Brak ludzi</div>';
                 }
 
-                // Sekcja Zadania
                 let tasksHtml = '';
                 if (team.tasks && team.tasks.length > 0) {
                     tasksHtml = team.tasks.map(t => createTeamItemHtml(t.title, 'task', t.id, team.id, true)).join('');
@@ -700,7 +744,6 @@ $userRole = $_SESSION['role'];
                   </div>
                 `;
                 
-                // Podpięcie zdarzeń Drop na strefy
                 const dropZones = card.querySelectorAll('.drop-zone');
                 dropZones.forEach(zone => {
                     zone.addEventListener('dragover', handleDragOver);
@@ -716,25 +759,22 @@ $userRole = $_SESSION['role'];
         }
     }
 
-    // Helper HTML dla elementu w zespole
     function createTeamItemHtml(text, type, id, teamId, isTask = false) {
         const borderClass = isTask ? 'team-task-item' : 'team-member-item';
-        const actionLabel = isTask ? '↻' : '↻'; // Ikona cofnięcia
         return `
             <div class="${borderClass}">
                 <span>${escapeHtml(text)}</span>
                 <button class="iconBtn" style="font-size:11px;" 
                     onclick="removeFromTeam('${type}', ${id}, ${teamId})" 
-                    title="Cofnij do puli">${actionLabel}</button>
+                    title="Cofnij do puli">↻</button>
             </div>
         `;
     }
 
-    // --- LOGIKA DRAG & DROP ---
-
+    // --- DRAG & DROP LOGIC ---
     function handleDragOver(e) {
-        e.preventDefault(); // Konieczne, aby pozwolić na drop
-        e.currentTarget.style.backgroundColor = '#334155'; // Podświetlenie
+        e.preventDefault();
+        e.currentTarget.style.backgroundColor = '#334155';
         e.dataTransfer.dropEffect = 'copy';
     }
 
@@ -747,12 +787,10 @@ $userRole = $_SESSION['role'];
         e.currentTarget.style.backgroundColor = 'transparent';
         
         const zone = e.currentTarget;
-        const targetType = zone.dataset.type; // 'worker' lub 'task'
+        const targetType = zone.dataset.type;
         const targetTeamId = zone.dataset.teamId;
 
         if (!draggedItem) return;
-
-        // Walidacja typu (nie wrzucaj zadania do ludzi i odwrotnie)
         if (draggedItem.type !== targetType) {
             showToast("Nie można tu upuścić tego elementu!");
             return;
@@ -760,9 +798,7 @@ $userRole = $_SESSION['role'];
 
         try {
             let success = false;
-
             if (draggedItem.type === 'worker') {
-                // Dodaj pracownika do zespołu
                 const res = await fetch('api/team-members.php', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -771,9 +807,7 @@ $userRole = $_SESSION['role'];
                 const result = await res.json();
                 if(result.success) success = true;
                 else if(result.message) showToast(result.message);
-
             } else if (draggedItem.type === 'task') {
-                // Przypisz zadanie do zespołu
                 const res = await fetch('api/tasks.php', {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
@@ -785,49 +819,83 @@ $userRole = $_SESSION['role'];
 
             if (success) {
                 showToast('Przypisano!');
-                selectProject(currentProjectId); // Odśwież widok
+                selectProject(currentProjectId); // To odświeży widok i pulę
             }
-
         } catch (err) {
             console.error(err);
             showToast('Błąd podczas przypisywania');
         }
     }
 
-    // --- FUNKCJE COFANIA (USUWANIA Z ZESPOŁU) ---
+    //
+async function removeFromTeam(type, itemId, teamId) {
+    // itemId to employee_id lub task_id
+    // teamId to ID zespołu
     
-    async function removeFromTeam(type, itemId, teamId) {
-        if(!confirm("Cofnąć ten element do puli?")) return;
+    if(!confirm("Cofnąć ten element do puli?")) return;
 
-        try {
-            let success = false;
-            if (type === 'worker') {
-                const res = await fetch('api/team-members.php', {
-                    method: 'DELETE',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ team_id: teamId, employee_id: itemId })
-                });
-                const r = await res.json();
-                if(r.success) success = true;
-            } else if (type === 'task') {
-                const res = await fetch('api/tasks.php', {
-                    method: 'PUT',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ id: itemId, assigned_to_team_id: null })
-                });
-                const r = await res.json();
-                if(r.success) success = true;
-            }
+    console.log(`Próba usunięcia: Typ=${type}, ItemID=${itemId}, TeamID=${teamId}`);
 
-            if(success) {
-                showToast('Cofnięto do puli');
-                selectProject(currentProjectId);
+    try {
+        let url = '';
+        let payload = {};
+        let success = false;
+
+        if (type === 'worker') {
+            url = 'api/team-members.php';
+            payload = { 
+                team_id: parseInt(teamId), 
+                employee_id: parseInt(itemId) 
+            };
+            console.log("Wysyłam DELETE do team-members:", payload);
+            
+            const res = await fetch(url, {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            
+            const r = await res.json();
+            console.log("Odpowiedź servera:", r);
+
+            if (!res.ok) {
+                throw new Error(r.message || `Błąd HTTP ${res.status}`);
             }
-        } catch(e) { alert('Błąd'); }
+            if(r.success) success = true;
+            else throw new Error(r.message || 'Nieznany błąd API');
+
+        } else if (type === 'task') {
+            // Dla zadań używamy PUT z assigned_to_team_id = null
+            url = 'api/tasks.php';
+            payload = { 
+                id: parseInt(itemId), 
+                assigned_to_team_id: null 
+            };
+            
+            const res = await fetch(url, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            const r = await res.json();
+            if(r.success) success = true;
+            else throw new Error(r.message);
+        }
+
+        if(success) {
+            showToast('Cofnięto do puli');
+            selectProject(currentProjectId);
+        }
+
+    } catch(e) {
+        console.error("Błąd usuwania:", e);
+        alert('Nie udało się cofnąć elementu: ' + e.message);
     }
+}
+	//
 
-    // --- POZOSTAŁE FUNKCJE CRUD (bez zmian) ---
-    async function saveWorker() { /* ... (takie same jak wcześniej) ... */ 
+    // --- CRUD ACTIONS ---
+    async function saveWorker() {
         const nameInput = document.getElementById('wmName');
         const name = nameInput.value.trim();
         if (!name) return alert('Podaj imię');
@@ -837,7 +905,7 @@ $userRole = $_SESSION['role'];
         else alert(r.message);
     }
 
-    async function addTaskFromInput() { /* ... */ 
+    async function addTaskFromInput() {
         const input = document.getElementById('taskInput');
         const title = input.value.trim();
         if(!title || !currentProjectId) return alert('Wybierz budowę i wpisz zadanie');
@@ -846,7 +914,7 @@ $userRole = $_SESSION['role'];
         if(r.success) { input.value=''; loadData(); showToast('Dodano zadanie'); }
     }
 
-    async function addTeam() { /* ... */ 
+    async function addTeam() {
         if(!currentProjectId) return alert('Wybierz budowę');
         const name = prompt("Nazwa zespołu:");
         if(!name) return;
@@ -857,13 +925,13 @@ $userRole = $_SESSION['role'];
 
     async function deleteTeam(id) { if(confirm('Usunąć zespół?')) { await fetch('api/teams.php',{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify({id:id})}); selectProject(currentProjectId); } }
     
-    async function addProject(name) { /* ... */ 
+    async function addProject(name) {
         const res = await fetch('api/projects.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:name, status:'active'}) });
         const r = await res.json();
         if(r.success) { loadData(); setTimeout(()=>{ if(allProjects.length){ document.getElementById('buildingSelect').value=allProjects[allProjects.length-1].id; selectProject(allProjects[allProjects.length-1].id); } }, 100); showToast('Dodano budowę'); }
     }
     
-    async function deleteCurrentProject() { /* ... */ 
+    async function deleteCurrentProject() {
         if(!currentProjectId) return;
         if(!confirm('Usunąć budowę?')) return;
         await fetch('api/projects.php', { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:currentProjectId}) });
@@ -873,11 +941,8 @@ $userRole = $_SESSION['role'];
     // UI Helpers
     window.switchView = (v) => { document.querySelectorAll('.view').forEach(x=>x.classList.remove('active')); document.getElementById('view'+v.charAt(0).toUpperCase()+v.slice(1)).classList.add('active'); };
     window.openModal = (id) => document.getElementById(id).hidden=false;
-    window.closeModal = (id) => document.getElementById(id).hidden=false; // Poprawka: powinno być true, ale sprawdzono wyżej
+    window.closeModal = (id) => document.getElementById(id).hidden=true;
     
-    // Fix for closeModal logic in previous block
-    window.closeModal = function(id) { document.getElementById(id).hidden = true; };
-
     let textModalCallback = null;
     window.openTextModal = (title, label, cb) => {
         document.getElementById('textModalTitle').textContent = title;
@@ -899,7 +964,64 @@ $userRole = $_SESSION['role'];
         document.getElementById('btnDeleteBuilding').onclick = deleteCurrentProject;
         document.getElementById('wmName').onkeypress = (e) => { if(e.key==='Enter') saveWorker(); };
         document.getElementById('taskInput').onkeypress = (e) => { if(e.key==='Enter') addTaskFromInput(); };
+		
+		//
+		document.getElementById('btnResetProject').onclick = () => {
+			if (!currentProjectId) return alert('Najpierw wybierz budowę!');
+			if (!confirm("CZY NA PEWNO? Spowoduje to usunięcie WSZYSTKICH pracowników z zespołów i cofnięcie WSZYSTKICH zadań do puli w tej budowie.\n\nDane pracowników i zadań NIE zostaną usunięte z bazy, tylko cofnięte do puli.")) return;
+
+			fetch('api/teams.php', {
+				method: 'DELETE',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({ 
+					action: 'reset_project', 
+					project_id: currentProjectId 
+				})
+			})
+			.then(r => r.json())
+			.then(res => {
+				if (res.success) {
+					showToast('Wszystkie przypisania wyczyszczone!');
+					selectProject(currentProjectId); // Odśwież widok
+				} else {
+					alert('Błąd: ' + (res.message || res.error));
+				}
+			})
+		.catch(e => alert('Błąd sieci: ' + e));
+		};
+		//
     }
-</script>
+	
+	
+	document.getElementById('btnEditBuilding').onclick = () => {
+    if (!currentProjectId) return alert('Najpierw wybierz budowę do edycji!');
+    
+    const select = document.getElementById('buildingSelect');
+    const currentName = select.options[select.selectedIndex].text;
+    const newName = prompt("Nowa nazwa budowy:", currentName);
+    
+    if (!newName || newName.trim() === '') return;
+    if (newName.trim() === currentName) return; // Brak zmiany
+
+    fetch('api/projects.php', {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            id: currentProjectId,
+            name: newName.trim()
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        if (res.success) {
+            showToast('Nazwa budowy zaktualizowana!');
+            loadData(); // Odśwież listę budów
+        } else {
+            alert('Błąd: ' + (res.message || res.error));
+        }
+    })
+    .catch(e => alert('Błąd sieci: ' + e));
+};
+  </script>
 </body>
 </html>

@@ -62,7 +62,25 @@ try {
             http_response_code(400);
             echo json_encode(['error' => 'Brak ID']);
         }
-    } else {
+    //
+		elseif ($method === 'PUT') {
+		$data = json_decode(file_get_contents("php://input"), true);
+    
+		if (empty($data['id']) || empty($data['name'])) {
+			http_response_code(400);
+			echo json_encode(['success' => false, 'message' => 'Brak ID lub nazwy']);
+			exit;
+		}
+    
+		$stmt = $pdo->prepare("UPDATE projects SET name = ? WHERE id = ?");
+		$stmt->execute([$data['name'], $data['id']]);
+    
+		echo json_encode(['success' => true]);
+}
+	//
+	
+	//
+	} else {
         http_response_code(405);
         echo json_encode(['error' => 'Metoda niedozwolona']);
     }
