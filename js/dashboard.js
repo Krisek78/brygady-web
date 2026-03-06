@@ -15,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // GŁÓWNA FUNKCJA ŁADUJĄCA DANE
 async function loadData() {
     try {
+        // 1. Pobieranie wszystkich danych z serwera
         const [wR, tR, pR, aR] = await Promise.all([
             fetch('api/workers.php'), 
             fetch('api/tasks.php'), 
@@ -22,29 +23,31 @@ async function loadData() {
             fetch('api/team-members.php?action=get_all_assigned')
         ]);
 
+        // 2. Parsowanie odpowiedzi na obiekty JSON
         allWorkers = await wR.json(); 
         allTasks = await tR.json(); 
         allProjects = await pR.json();
+        const aD = await aR.json(); 
         
-        const aD = await aR.json();
-        // Konwertujemy ID na liczby dla poprawnego działania Set.has()
+        // 3. Przygotowanie zbioru zajętych pracowników
         assignedWorkerIds = new Set((aD.assigned_ids || []).map(id => parseInt(id)));
-
-        renderWorkersPool(); 
-        renderTasksPool(); 
-        renderProjectSelect();
         
-        // Logika wyboru budowy przy starcie
-        const selectEl = document.getElementById('buildingSelect');
-        if (currentProjectId && allProjects.find(p => p.id === currentProjectId)) {
-            selectEl.value = currentProjectId;
+        // --- KLUCZOWY MOMENT: Wywołanie funkcji rysujących interfejs ---
+        
+        renderWorkersPool();  // Rysuje lewą kolumnę (ludzie)
+        renderTasksPool();    // Rysuje dolny panel (zadania)
+        renderProjectSelect(); // Rysuje listę wyboru budowy
+        
+        // 4. Jeśli mamy wybraną budowę, odświeżamy jej zespoły
+        if (currentProjectId) {
             selectProject(currentProjectId);
-        } else {
-            selectProject(null); // Wymuś pusty ekran na start
+        } else if (allProjects.length === 1) {
+            currentProjectId = allProjects[0].id;
+            document.getElementById('buildingSelect').value = currentProjectId;
+            selectProject(currentProjectId);
         }
     } catch (e) { 
-        console.error("Błąd ładowania danych:", e); 
-        showToast("Błąd bazy danych!"); 
+        console.error("Błąd podczas odświeżania danych:", e); 
     }
 }
 
@@ -228,28 +231,58 @@ async function handleDrop(e) {
     e.preventDefault();
     const zone = e.currentTarget;
     zone.style.backgroundColor = 'transparent';
-    if (!draggedItem || draggedItem.type !== zone.dataset.type) return;
+
+    // 1. Walidacja: Czy ciągniemy właściwy typ do właściwej strefy (worker do worker, task do task)
+    if (!draggedItem || draggedItem.type !== zone.dataset.type) {
+        showToast("Nie można tu upuścić tego elementu!");
+        return;
+    }
 
     try {
-        const url = draggedItem.type === 'worker' ? 'api/team-members.php' : 'api/tasks.php';
-        const body = draggedItem.type === 'worker' ? 
-            { team_id: parseInt(zone.dataset.teamId), employee_id: draggedItem.id } : 
-            { id: draggedItem.id, assigned_to_team_id: parseInt(zone.dataset.teamId) };
+        let success = false;
+        const teamId = parseInt(zone.dataset.teamId);
 
-        const res = await fetch(url, { 
-            method: draggedItem.type === 'worker' ? 'POST' : 'PUT', 
-            headers: {'Content-Type': 'application/json'}, 
-            body: JSON.stringify(body) 
-        });
-        
-        const r = await res.json();
-        if(r.success) {
-            showToast('Przypisano!');
-            loadData(); 
-        } else {
-            alert(r.message);
+        // 2. Obsługa PRZYPISYWANIA PRACOWNIKA
+        if (draggedItem.type === 'worker') {
+            const res = await fetch('api/team-members.php', { 
+                method: 'POST', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ 
+                    team_id: teamId, 
+                    employee_id: draggedItem.id 
+                }) 
+            });
+            const r = await res.json();
+            if(r.success) success = true;
+            else showToast(r.message); // Wyświetla np. "Pracownik już przypisany!"
+
+        // 3. Obsługa PRZYPISYWANIA ZADANIA
+        } else if (draggedItem.type === 'task') {
+            const res = await fetch('api/tasks.php', { 
+                method: 'PUT', 
+                headers: {'Content-Type': 'application/json'}, 
+                body: JSON.stringify({ 
+                    id: draggedItem.id, 
+                    assigned_to_team_id: teamId 
+                }) 
+            });
+            const r = await res.json();
+            if(r.success) success = true;
         }
-    } catch (err) { console.error(err); }
+
+        // 4. Jeśli operacja w bazie się udała, odświeżamy dane
+        if (success) {
+            showToast('Przypisano pomyślnie!');
+            
+            // To wywołanie jest kluczowe - pobiera nowe dane z bazy (z nowymi assigned_to_team_id)
+            // i automatycznie uruchamia renderowanie list, co ukrywa przypisane elementy.
+            await loadData(); 
+        }
+
+    } catch (err) {
+        console.error("Błąd podczas dropu:", err);
+        showToast("Wystąpił błąd połączenia.");
+    }
 }
 
 async function removeFromTeam(type, itemId, teamId) {
