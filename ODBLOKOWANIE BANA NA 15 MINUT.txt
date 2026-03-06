@@ -1,0 +1,2 @@
+Uwaga do Administracji:
+Jeśli zdarzy się, że ktoś (lub Ty) zablokuje się przez pomyłkę, wystarczy wejść do phpMyAdmin i wyczyścić tabelę login_attempts (TRUNCATE login_attempts;).
