@@ -29,9 +29,9 @@ $userRole = $_SESSION['role'];
     </div>
     <div class="actions">
       <div class="tabs">
-        <button class="tabBtn active" onclick="switchView('plan')">Plan</button>
-        <button class="tabBtn" onclick="switchView('people')">Ludzie</button>
-        <button class="tabBtn" onclick="switchView('tasks')">Zadania</button>
+        <button class="tabBtn active" data-view="plan">Plan</button>
+		<button class="tabBtn" data-view="people">Ludzie</button>
+		<button class="tabBtn" data-view="tasks">Zadania</button>
       </div>
       <button class="ghost" title="Sprawdź obsadę"><span style="font-size: 16px;">✓</span></button>
       <button class="primary">DRUKUJ (PDF)</button>
@@ -45,7 +45,7 @@ $userRole = $_SESSION['role'];
         <div class="panelTitle">LUDZIE (pula)</div>
         <div class="row">
           <input id="workerSearch" class="search" placeholder="Szukaj..." />
-          <button id="btnAddWorker" class="primary" onclick="openModal('workerModal')" style="padding: 6px 12px; font-size: 12px;">+ Dodaj</button>
+          <button id="btnAddWorker" class="primary" style="padding: 6px 12px; font-size: 12px;">+ Dodaj</button>
         </div>
       </div>
       <div id="workersPool" class="pool">
@@ -75,6 +75,7 @@ $userRole = $_SESSION['role'];
         </div>
         <button id="btnAddTeam" class="ghost">+ Dodaj zespół</button>
         <button id="btnAddBuilding" class="ghost">+ Dodaj budowę</button>
+		
       </div>
 
       <div id="viewPlan" class="view active">

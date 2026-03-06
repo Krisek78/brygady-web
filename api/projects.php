@@ -51,7 +51,23 @@ try {
         $newId = $pdo->lastInsertId();
         echo json_encode(['success' => true, 'id' => $newId, 'message' => 'Projekt dodany']);
 
-    } elseif ($method === 'DELETE') {
+    } 
+	
+	//
+		elseif ($method === 'PUT') {
+        $data = json_decode(file_get_contents("php://input"), true);
+        if (empty($data['id']) || empty($data['name'])) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Brak ID lub nazwy']);
+            exit;
+        }
+        $stmt = $pdo->prepare("UPDATE projects SET name = ? WHERE id = ?");
+        $stmt->execute([$data['name'], $data['id']]);
+        echo json_encode(['success' => true]);
+        exit;
+    }
+	//
+		elseif ($method === 'DELETE') {
         // --- USUWANIE PROJEKTU (opcjonalnie na później) ---
         parse_str(file_get_contents("php://input"), $data);
         if (isset($data['id'])) {
