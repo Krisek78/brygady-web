@@ -1,63 +1,47 @@
 <?php
-// --- TEMPORARY DEBUGGING ---
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-// ---------------------------
-
 header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *');
-header('Access-Control-Allow-Methods: GET, POST, DELETE, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
-
-if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
-    exit(0);
-}
-
-session_start();
-// Tymczasowo wyłączamy sprawdzanie sesji dla testu, jeśli problem leży w sesji, 
-// ale najpierw sprawdźmy bazę. Jeśli chcesz zachować bezpieczeństwo, zostaw to:
-if (!isset($_SESSION['user_id'])) { 
-    // http_response_code(401); 
-    // echo json_encode(['error'=>'Auth']); 
-    // exit; 
-    // UWAGA: Powyższe linie komentuję TYLKO DO TESTU. Jeśli działają, odkomentuj je później!
-}
-
-if (!defined('APP_INIT')) define('APP_INIT', true);
-
-// Sprawdź czy plik istnieje przed require
-if (!file_exists(__DIR__ . '/../config/db.php')) {
-    die(json_encode(['error' => 'Nie znaleziono pliku config/db.php']));
-}
-
+ini_set('display_errors', 0); // Wyłącz błędy tekstowe, które psują JSON
+define('APP_INIT', true);
 require_once __DIR__ . '/../config/db.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
 try {
     if ($method === 'GET') {
-        $stmt = $pdo->query("SELECT * FROM employees ORDER BY full_name ASC");
-        echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+        $stmt = $pdo->query("SELECT id, full_name FROM employees ORDER BY full_name ASC");
+        $res = $stmt->fetchAll();
+        foreach($res as &$r) { $r['id'] = (int)$r['id']; }
+        echo json_encode($res);
     } 
     elseif ($method === 'POST') {
         $data = json_decode(file_get_contents("php://input"), true);
-        if (!isset($data['full_name'])) { 
-            http_response_code(400); 
-            echo json_encode(['success'=>false, 'message'=>'Brak imienia']); 
-            exit; 
+        $name = isset($data['full_name']) ? trim($data['full_name']) : '';
+
+        if (empty($name)) {
+            echo json_encode(['success' => false, 'message' => "Imię i nazwisko są wymagane."]);
+            exit;
         }
-        
+
+        // 1. Sprawdź duplikat tradycyjnym SELECT (najbezpieczniej dla JS)
+        $check = $pdo->prepare("SELECT full_name FROM employees WHERE LOWER(full_name) = LOWER(?)");
+        $check->execute([$name]);
+        $existing = $check->fetch();
+
+        if ($existing) {
+            echo json_encode([
+                'success' => false, 
+                'message' => "PRACOWNIK JUŻ ISTNIEJE: Osoba o nazwisku '" . $existing['full_name'] . "' jest już w bazie danych."
+            ]);
+            exit;
+        }
+
+        // 2. Jeśli nie ma duplikatu, spróbuj dodać
         $stmt = $pdo->prepare("INSERT INTO employees (full_name) VALUES (?)");
-        $stmt->execute([$data['full_name']]);
-        echo json_encode(['success'=>true]);
+        $stmt->execute([$name]);
+        
+        echo json_encode(['success' => true]);
     }
-} catch (PDOException $e) {
-    // To jest kluczowe - zwróci dokładny błąd SQL do przeglądarki
-    http_response_code(500);
-    echo json_encode(['error' => 'Błąd Bazy Danych: ' . $e->getMessage()]);
 } catch (Exception $e) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Błąd Ogólny: ' . $e->getMessage()]);
+    // Nawet w przypadku błędu bazy, zwróć JSON
+    echo json_encode(['success' => false, 'message' => "Błąd serwera: " . $e->getMessage()]);
 }
-?>

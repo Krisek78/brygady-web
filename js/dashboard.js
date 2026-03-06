@@ -1,3 +1,4 @@
+// --- ZMIENNE GLOBALNE ---
 let allWorkers = [];
 let allTasks = [];
 let allProjects = [];
@@ -5,51 +6,81 @@ let currentProjectId = null;
 let assignedWorkerIds = new Set();
 let draggedItem = null;
 
+// --- INICJALIZACJA ---
 document.addEventListener('DOMContentLoaded', () => {
     loadData();
     setupEventListeners();
 });
 
+// GŁÓWNA FUNKCJA ŁADUJĄCA DANE
 async function loadData() {
     try {
-        const [workersRes, tasksRes, projectsRes, assignedRes] = await Promise.all([
-            fetch('api/workers.php'),
-            fetch('api/tasks.php'),
-            fetch('api/projects.php'),
+        const [wR, tR, pR, aR] = await Promise.all([
+            fetch('api/workers.php'), 
+            fetch('api/tasks.php'), 
+            fetch('api/projects.php'), 
             fetch('api/team-members.php?action=get_all_assigned')
         ]);
 
-        allWorkers = await workersRes.json();
-        allTasks = await tasksRes.json();
-        allProjects = await projectsRes.json();
+        allWorkers = await wR.json(); 
+        allTasks = await tR.json(); 
+        allProjects = await pR.json();
         
-        const assignedData = await assignedRes.json();
-        assignedWorkerIds = new Set(assignedData.assigned_ids || []);
+        const aD = await aR.json();
+        // Konwertujemy ID na liczby dla poprawnego działania Set.has()
+        assignedWorkerIds = new Set((aD.assigned_ids || []).map(id => parseInt(id)));
 
-        renderWorkersPool();
-        renderTasksPool();
+        renderWorkersPool(); 
+        renderTasksPool(); 
         renderProjectSelect();
         
-        if (currentProjectId) selectProject(currentProjectId);
-        else if (allProjects.length === 1) selectProject(allProjects[0].id);
-    } catch (error) {
-        console.error("Błąd ładowania:", error);
-        showToast("Błąd łączenia z bazą danych!");
+        // Logika wyboru budowy przy starcie
+        const selectEl = document.getElementById('buildingSelect');
+        if (currentProjectId && allProjects.find(p => p.id === currentProjectId)) {
+            selectEl.value = currentProjectId;
+            selectProject(currentProjectId);
+        } else {
+            selectProject(null); // Wymuś pusty ekran na start
+        }
+    } catch (e) { 
+        console.error("Błąd ładowania danych:", e); 
+        showToast("Błąd bazy danych!"); 
     }
 }
 
+// --- RENDEROWANIE PULI PRACOWNIKÓW ---
 function renderWorkersPool() {
     const container = document.getElementById('workersPool');
     if (!container) return;
     container.innerHTML = '';
-    const availableWorkers = allWorkers.filter(w => !assignedWorkerIds.has(w.id));
-    availableWorkers.forEach(w => {
-        const el = createDraggableElement(w.full_name, 'worker', w.id);
+
+    const avail = allWorkers.filter(w => !assignedWorkerIds.has(parseInt(w.id)));
+    
+    if (avail.length === 0) {
+        container.innerHTML = '<div style="color:#64748b; text-align:center; margin-top:30px;">Brak wolnych pracowników.</div>';
+        return;
+    }
+
+    avail.forEach(w => {
+        const el = document.createElement('div');
+        el.className = 'pool-item';
+        el.draggable = true;
+        el.textContent = w.full_name;
+        el.dataset.id = w.id;
+        
+        el.addEventListener('dragstart', (e) => {
+            draggedItem = { id: parseInt(w.id), type: 'worker' };
+            e.dataTransfer.setData('text/plain', JSON.stringify(draggedItem));
+            setTimeout(() => el.style.opacity = '0.5', 0);
+        });
+        el.addEventListener('dragend', () => { el.style.opacity = '1'; draggedItem = null; });
+        
         container.appendChild(el);
     });
     filterWorkers();
 }
 
+// --- FILTROWANIE LUDZI ---
 function filterWorkers() {
     const term = document.getElementById('workerSearch')?.value.toLowerCase() || "";
     document.querySelectorAll('#workersPool .pool-item').forEach(item => {
@@ -57,29 +88,36 @@ function filterWorkers() {
     });
 }
 
+// --- RENDEROWANIE PULI ZADAŃ ---
 function renderTasksPool() {
-    const container = document.getElementById('tasksPool');
-    if (!container) return;
-    container.innerHTML = '';
-    allTasks.filter(t => !t.assigned_to_team_id).forEach(t => {
-        container.appendChild(createDraggableElement(t.title, 'task', t.id));
-    });
-}
+    const c = document.getElementById('tasksPool'); 
+    if (!c) return; 
+    c.innerHTML = '';
 
-function createDraggableElement(text, type, id) {
-    const el = document.createElement('div');
-    el.className = 'pool-item';
-    el.draggable = true;
-    el.textContent = text;
-    el.dataset.id = id;
-    el.dataset.type = type;
-    el.addEventListener('dragstart', (e) => {
-        draggedItem = { id: id, type: type };
-        e.dataTransfer.setData('text/plain', JSON.stringify(draggedItem));
-        setTimeout(() => el.style.opacity = '0.5', 0);
+    // FILTROWANIE: Pokazujemy tylko zadania, które nie mają przypisanego zespołu
+    const unassignedTasks = allTasks.filter(t => {
+        return t.assigned_to_team_id === null || t.assigned_to_team_id === 0 || t.assigned_to_team_id === undefined;
     });
-    el.addEventListener('dragend', () => { el.style.opacity = '1'; draggedItem = null; });
-    return el;
+
+    if (unassignedTasks.length === 0) {
+        c.innerHTML = '<div style="color:#64748b;text-align:center;margin-top:30px;">Brak wolnych zadań.</div>';
+        return;
+    }
+
+    unassignedTasks.forEach(t => {
+        const el = document.createElement('div'); 
+        el.className = 'pool-item'; 
+        el.draggable = true; 
+        el.textContent = t.title;
+        el.dataset.id = t.id;
+        el.dataset.type = 'task';
+
+        el.addEventListener('dragstart', (e) => { 
+            draggedItem = { id: parseInt(t.id), type: 'task' }; 
+            e.dataTransfer.setData('text/plain', JSON.stringify(draggedItem)); 
+        });
+        c.appendChild(el);
+    });
 }
 
 function renderProjectSelect() {
@@ -89,61 +127,128 @@ function renderProjectSelect() {
     sel.innerHTML = '<option value="">-- Wybierz budowę --</option>';
     allProjects.forEach(p => {
         const opt = document.createElement('option');
-        opt.value = p.id; opt.textContent = p.name;
+        opt.value = p.id;
+        opt.textContent = p.name;
         sel.appendChild(opt);
     });
-    if (currentVal && allProjects.find(p => p.id == currentVal)) sel.value = currentVal;
+    if (currentVal) sel.value = currentVal;
 }
 
-async function selectProject(projectId) {
-    currentProjectId = projectId;
+// --- LOGIKA WIDOKU PLANU (ZESPOŁY) ---
+async function selectProject(id) {
+    id = parseInt(id);
     const area = document.getElementById('teamsArea');
     if (!area) return;
-    if (!projectId) {
+
+    if (!id || isNaN(id)) {
+        currentProjectId = null;
         area.innerHTML = '<div style="color:#64748b; width:100%; text-align:center; margin-top:100px;"><p>Wybierz budowę...</p></div>';
         return;
     }
+
+    currentProjectId = id;
+    area.innerHTML = '<div style="color:#64748b; text-align:center; margin-top:50px;">Ładowanie zespołów...</div>';
+
     try {
-        const res = await fetch(`api/teams.php?project_id=${projectId}`);
+        const res = await fetch(`api/teams.php?project_id=${id}`);
         const teams = await res.json();
         area.innerHTML = '';
+
+        if (teams.length === 0) {
+            area.innerHTML = `<div style="text-align:center; margin-top:50px;"><button class="primary" onclick="addTeam()">+ Dodaj pierwszy zespół</button></div>`;
+            return;
+        }
+
         teams.forEach(team => {
             const card = document.createElement('div');
             card.className = 'team-card';
-            const mHtml = team.members?.length ? team.members.map(m => createItemHtml(m.full_name, 'worker', m.id, team.id)).join('') : '<div style="color:#64748b; font-size:12px; padding:8px;">Brak ludzi</div>';
-            const tHtml = team.tasks?.length ? team.tasks.map(t => createItemHtml(t.title, 'task', t.id, team.id, true)).join('') : '<div style="color:#64748b; font-size:12px; padding:8px;">Brak zadań</div>';
+            
+            const mHtml = team.members?.length ? 
+                team.members.map(m => `<div class="team-member-item"><span>${escapeHtml(m.full_name)}</span><button class="iconBtn" onclick="removeFromTeam('worker', ${m.id}, ${team.id})">↻</button></div>`).join('') : 
+                '<div style="color:#64748b; font-size:12px; padding:8px;">Brak ludzi</div>';
+            
+            const tHtml = team.tasks?.length ? 
+                team.tasks.map(t => `<div class="team-task-item"><span>${escapeHtml(t.title)}</span><button class="iconBtn" onclick="removeFromTeam('task', ${t.id}, ${team.id})">↻</button></div>`).join('') : 
+                '<div style="color:#64748b; font-size:12px; padding:8px;">Brak zadań</div>';
+
             card.innerHTML = `
-              <div class="team-card-header"><span class="team-card-title">${escapeHtml(team.team_name)}</span><button class="iconBtn" style="color:#ef4444;" onclick="deleteTeam(${team.id})">✕</button></div>
+              <div class="team-card-header">
+                <span class="team-card-title">${escapeHtml(team.team_name)}</span>
+                <div style="display:flex; gap:4px;">
+                    <button class="iconBtn" onclick="editTeamName(${team.id}, '${escapeHtml(team.team_name)}')" title="Edytuj nazwę">✎</button>
+                    <button class="iconBtn" style="color:#ef4444;" onclick="deleteTeam(${team.id})">✕</button>
+                </div>
+              </div>
               <div class="team-card-body">
-                <div class="team-section"><div class="team-section-label">LUDZIE</div><div class="drop-zone" data-type="worker" data-team-id="${team.id}">${mHtml}</div></div>
-                <div class="team-section"><div class="team-section-label">ZADANIA</div><div class="drop-zone" data-type="task" data-team-id="${team.id}">${tHtml}</div></div>
+                <div class="team-section">
+                    <div class="team-section-label">LUDZIE</div>
+                    <div class="drop-zone" data-type="worker" data-team-id="${team.id}">${mHtml}</div>
+                </div>
+                <div class="team-section">
+                    <div class="team-section-label">ZADANIA</div>
+                    <div class="drop-zone" data-type="task" data-team-id="${team.id}">${tHtml}</div>
+                </div>
               </div>`;
-            card.querySelectorAll('.drop-zone').forEach(zone => {
-                zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.backgroundColor = '#334155'; });
-                zone.addEventListener('dragleave', () => zone.style.backgroundColor = 'transparent');
-                zone.addEventListener('drop', handleDrop);
+
+            card.querySelectorAll('.drop-zone').forEach(z => {
+                z.addEventListener('dragover', e => { e.preventDefault(); z.style.backgroundColor = '#334155'; });
+                z.addEventListener('dragleave', () => z.style.backgroundColor = 'transparent');
+                z.addEventListener('drop', handleDrop);
             });
             area.appendChild(card);
         });
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error("Błąd w selectProject:", e);
+        area.innerHTML = '<div style="color:red">Błąd podczas ładowania zespołów.</div>';
+    }
 }
 
-function createItemHtml(text, type, id, teamId, isTask = false) {
-    const cls = isTask ? 'team-task-item' : 'team-member-item';
-    return `<div class="${cls}"><span>${escapeHtml(text)}</span><button class="iconBtn" style="font-size:11px;" onclick="removeFromTeam('${type}', ${id}, ${teamId})">↻</button></div>`;
+// Dodaj też samą funkcję editTeamName, jeśli jej nie masz:
+async function editTeamName(teamId, oldName) {
+    const newName = prompt("Nowa nazwa zespołu:", oldName);
+    if (!newName || newName.trim() === '' || newName.trim() === oldName) return;
+
+    const res = await fetch('api/teams.php', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: teamId, team_name: newName.trim() })
+    });
+    const r = await res.json();
+    if (r.success) {
+        showToast('Zmieniono nazwę zespołu');
+        selectProject(currentProjectId);
+    }
 }
 
+
+function escapeHtml(t){ return t ? String(t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;") : ''; }
+
+// --- DRAG & DROP ---
 async function handleDrop(e) {
     e.preventDefault();
     const zone = e.currentTarget;
     zone.style.backgroundColor = 'transparent';
     if (!draggedItem || draggedItem.type !== zone.dataset.type) return;
+
     try {
         const url = draggedItem.type === 'worker' ? 'api/team-members.php' : 'api/tasks.php';
-        const method = draggedItem.type === 'worker' ? 'POST' : 'PUT';
-        const body = draggedItem.type === 'worker' ? { team_id: zone.dataset.teamId, employee_id: draggedItem.id } : { id: draggedItem.id, assigned_to_team_id: zone.dataset.teamId };
-        const res = await fetch(url, { method: method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
-        if((await res.json()).success) { showToast('Przypisano!'); loadData(); }
+        const body = draggedItem.type === 'worker' ? 
+            { team_id: parseInt(zone.dataset.teamId), employee_id: draggedItem.id } : 
+            { id: draggedItem.id, assigned_to_team_id: parseInt(zone.dataset.teamId) };
+
+        const res = await fetch(url, { 
+            method: draggedItem.type === 'worker' ? 'POST' : 'PUT', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(body) 
+        });
+        
+        const r = await res.json();
+        if(r.success) {
+            showToast('Przypisano!');
+            loadData(); 
+        } else {
+            alert(r.message);
+        }
     } catch (err) { console.error(err); }
 }
 
@@ -151,33 +256,56 @@ async function removeFromTeam(type, itemId, teamId) {
     if(!confirm("Cofnąć do puli?")) return;
     try {
         const url = type === 'worker' ? 'api/team-members.php' : 'api/tasks.php';
-        const method = type === 'worker' ? 'DELETE' : 'PUT';
-        const body = type === 'worker' ? { team_id: teamId, employee_id: itemId } : { id: itemId, assigned_to_team_id: null };
-        const res = await fetch(url, { method: method, headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body) });
-        if((await res.json()).success) { showToast('Cofnięto'); loadData(); }
+        const body = type === 'worker' ? 
+            { team_id: parseInt(teamId), employee_id: parseInt(itemId) } : 
+            { id: parseInt(itemId), assigned_to_team_id: null };
+
+        const res = await fetch(url, { 
+            method: type === 'worker' ? 'DELETE' : 'PUT', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(body) 
+        });
+        
+        if((await res.json()).success) {
+            showToast('Cofnięto');
+            loadData();
+        }
     } catch(e) { console.error(e); }
 }
 
+// --- CRUD ---
 async function saveWorker() {
-    const name = document.getElementById('wmName').value.trim();
-    if (!name) return;
-    const res = await fetch('api/workers.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({full_name:name}) });
-    if((await res.json()).success) { closeModal('workerModal'); document.getElementById('wmName').value=''; loadData(); showToast('Dodano'); }
+    const nameInput = document.getElementById('wmName');
+    const n = nameInput.value.trim(); 
+    if (!n) return;
+
+    try {
+        const res = await fetch('api/workers.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({full_name:n}) });
+        const r = await res.json();
+        if(r.success) { 
+            closeModal('workerModal'); 
+            nameInput.value=''; 
+            loadData(); 
+            showToast('Dodano pracownika');
+        } else {
+            alert(r.message); // Komunikat o duplikacie z PHP
+        }
+    } catch (e) { alert("Błąd połączenia."); }
 }
 
 async function addTaskFromInput() {
-    const val = document.getElementById('taskInput').value.trim();
-    if(!val || !currentProjectId) return;
-    const res = await fetch('api/tasks.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:val, project_id:currentProjectId}) });
-    if((await res.json()).success) { document.getElementById('taskInput').value=''; loadData(); showToast('Dodano zadanie'); }
+    const v = document.getElementById('taskInput').value.trim();
+    if(!v || !currentProjectId) return alert("Wybierz budowę!");
+    const res = await fetch('api/tasks.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({title:v, project_id:currentProjectId}) });
+    if((await res.json()).success) { document.getElementById('taskInput').value=''; loadData(); }
 }
 
 async function addTeam() {
-    if(!currentProjectId) return;
-    const name = prompt("Nazwa zespołu:");
-    if(!name) return;
-    const res = await fetch('api/teams.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({project_id:currentProjectId, team_name:name}) });
-    if((await res.json()).success) { selectProject(currentProjectId); showToast('Dodano zespół'); }
+    if(!currentProjectId) return alert("Wybierz budowę!");
+    const n = prompt("Nazwa zespołu:");
+    if(!n) return;
+    const res = await fetch('api/teams.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({project_id:currentProjectId, team_name:n}) });
+    if((await res.json()).success) selectProject(currentProjectId);
 }
 
 async function deleteTeam(id) { 
@@ -187,103 +315,116 @@ async function deleteTeam(id) {
     } 
 }
 
-async function addProject(name) {
-    const res = await fetch('api/projects.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:name, status:'active'}) });
-    if((await res.json()).success) { loadData(); showToast('Dodano budowę'); }
+async function addProject(n) {
+    const res = await fetch('api/projects.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:n}) });
+    if((await res.json()).success) loadData();
 }
 
 async function deleteCurrentProject() {
-    if(!currentProjectId || !confirm('Usunąć budowę?')) return;
+    if(!currentProjectId || !confirm('Usunąć budowę? Wszystkie przypisania zostaną utracone.')) return;
     await fetch('api/projects.php', { method:'DELETE', headers:{'Content-Type':'application/json'}, body:JSON.stringify({id:currentProjectId}) });
-    currentProjectId=null; document.getElementById('buildingSelect').value=""; loadData();
+    currentProjectId = null;
+    loadData();
 }
 
 async function editProjectName() {
     if (!currentProjectId) return;
     const sel = document.getElementById('buildingSelect');
-    const oldName = sel.options[sel.selectedIndex].text;
-    const newName = prompt("Nowa nazwa budowy:", oldName);
-    if (!newName || newName.trim() === '' || newName === oldName) return;
-    const res = await fetch('api/projects.php', { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id: currentProjectId, name: newName.trim() }) });
-    if ((await res.json()).success) { showToast('Zmieniono nazwę'); loadData(); }
+    const n = prompt("Nowa nazwa:", sel.options[sel.selectedIndex].text);
+    if (!n) return;
+    await fetch('api/projects.php', { method: 'PUT', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ id: currentProjectId, name: n }) });
+    loadData();
 }
 
 async function resetProject() {
-    if (!currentProjectId || !confirm("CZY NA PEWNO WYCZYŚCIĆ PRZYPISANIA?")) return;
-    const res = await fetch('api/teams.php', { method: 'DELETE', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'reset_project', project_id: currentProjectId }) });
-    if ((await res.json()).success) { showToast('Wyczyszczono'); loadData(); }
+    if (!currentProjectId || !confirm("Czy na pewno wyczyścić wszystkie przypisania w tej budowie?")) return;
+    await fetch('api/teams.php', { method: 'DELETE', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ action: 'reset_project', project_id: currentProjectId }) });
+    loadData();
+}
+async function editTeamName(teamId, oldName) {
+    const newName = prompt("Nowa nazwa zespołu:", oldName);
+    if (!newName || newName.trim() === '' || newName.trim() === oldName) return;
+
+    try {
+        const res = await fetch('api/teams.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                id: teamId, 
+                team_name: newName.trim() 
+            })
+        });
+        
+        const r = await res.json();
+        if (r.success) {
+            showToast('Nazwa zespołu zmieniona');
+            selectProject(currentProjectId); // Odśwież widok zespołów
+        } else {
+            alert(r.message || "Błąd podczas zmiany nazwy.");
+        }
+    } catch (e) {
+        console.error(e);
+        alert("Błąd połączenia.");
+    }
 }
 
-// Poprawiona funkcja switchView, aby działała bez "event" w HTML
-window.switchView = (viewName) => { 
-    document.querySelectorAll('.view').forEach(x => x.classList.remove('active')); 
-    document.getElementById('view' + viewName.charAt(0).toUpperCase() + viewName.slice(1)).classList.add('active');
+
+// --- UI LISTENERS ---
+function setupEventListeners() {
+    document.getElementById('buildingSelect').onchange = (e) => selectProject(e.target.value);
+    document.querySelectorAll('.tabBtn').forEach(b => b.onclick = () => switchView(b.dataset.view));
     
-    document.querySelectorAll('.tabBtn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.view === viewName);
-    });
+    document.getElementById('btnAddTeam').onclick = () => addTeam();
+    document.getElementById('btnAddBuilding').onclick = () => openTextModal('Dodaj budowę', 'Nazwa nowej budowy', (n) => addProject(n));
+    document.getElementById('btnDeleteBuilding').onclick = () => deleteCurrentProject();
+    document.getElementById('btnEditBuilding').onclick = () => editProjectName();
+    document.getElementById('btnResetProject').onclick = () => resetProject();
     
-    if(viewName === 'people') renderPeopleList();
-    if(viewName === 'tasks') renderTasksListFull();
+    document.getElementById('btnAddWorker').onclick = () => openModal('workerModal');
+    document.getElementById('btnSaveWorker').onclick = () => saveWorker();
+    document.getElementById('textModalOk').onclick = () => confirmTextModal();
+    
+    document.getElementById('workerSearch').oninput = () => filterWorkers();
+    document.querySelectorAll('.modalClose').forEach(b => b.onclick = () => closeModal(b.dataset.modal));
+}
+
+window.switchView = (v) => {
+    document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+    document.getElementById('view' + v.charAt(0).toUpperCase() + v.slice(1)).classList.add('active');
+    document.querySelectorAll('.tabBtn').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+    if(v === 'people') renderPeopleList();
 };
 
-
-window.openModal = (id) => { document.getElementById(id).hidden = false; };
-window.closeModal = (id) => { document.getElementById(id).hidden = true; };
+window.openModal = (id) => document.getElementById(id).hidden = false;
+window.closeModal = (id) => document.getElementById(id).hidden = true;
 
 let textModalCallback = null;
 window.openTextModal = (title, label, cb) => {
     document.getElementById('textModalTitle').textContent = title;
     document.getElementById('textModalLabel').textContent = label;
     document.getElementById('textModalInput').value = '';
-    textModalCallback = cb;
+    textModalCallback = cb; 
     openModal('textModal');
 };
 
-function confirmTextModal() {
-    const val = document.getElementById('textModalInput').value.trim();
-    if(val && textModalCallback) textModalCallback(val); 
-    closeModal('textModal');
+function confirmTextModal() { 
+    const v = document.getElementById('textModalInput').value.trim(); 
+    if(v && textModalCallback) textModalCallback(v); 
+    closeModal('textModal'); 
 }
 
-window.showToast = (msg) => { const t=document.getElementById('toast'); t.textContent=msg; t.hidden=false; setTimeout(()=>t.hidden=true, 3000); };
-function escapeHtml(t){ if(!t)return t; return t.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#039;"); }
+window.showToast = (m) => { 
+    const t = document.getElementById('toast'); 
+    t.textContent = m; t.hidden = false; 
+    setTimeout(() => t.hidden = true, 3000); 
+};
 
-function setupEventListeners() {
-    const bSelect = document.getElementById('buildingSelect');
-    if(bSelect) bSelect.onchange = (e) => selectProject(e.target.value);
-    
-    const btnTeam = document.getElementById('btnAddTeam');
-    if(btnTeam) btnTeam.onclick = () => addTeam();
-    
-    const btnBuilding = document.getElementById('btnAddBuilding');
-    if(btnBuilding) {
-        btnBuilding.onclick = () => {
-            openTextModal('Dodaj budowę', 'Nazwa nowej budowy', (name) => addProject(name));
-        };
-    }
-    
-    const btnDeleteB = document.getElementById('btnDeleteBuilding');
-    if(btnDeleteB) btnDeleteB.onclick = () => deleteCurrentProject();
-
-    const btnEditB = document.getElementById('btnEditBuilding');
-    if(btnEditB) btnEditB.onclick = () => editProjectName();
-
-    const btnResetP = document.getElementById('btnResetProject');
-    if(btnResetP) btnResetP.onclick = () => resetProject();
-    
-    const btnWorker = document.getElementById('btnAddWorker');
-    if(btnWorker) btnWorker.onclick = () => openModal('workerModal');
-
-    const btnModalOk = document.getElementById('textModalOk');
-    if(btnModalOk) btnModalOk.onclick = () => confirmTextModal();
-    
-    const wSearch = document.getElementById('workerSearch');
-    if(wSearch) wSearch.addEventListener('input', filterWorkers);
-
-    const wmInput = document.getElementById('wmName');
-    if(wmInput) wmInput.onkeypress = (e) => { if(e.key === 'Enter') saveWorker(); };
-
-    const tInput = document.getElementById('taskInput');
-    if(tInput) tInput.onkeypress = (e) => { if(e.key === 'Enter') addTaskFromInput(); };
+function renderPeopleList() {
+    const list = document.getElementById('peopleViewList');
+    fetch('api/team-members.php?action=get_all_assignments').then(r => r.json()).then(data => {
+        list.innerHTML = allWorkers.map(w => {
+            const a = data.find(assign => parseInt(assign.employee_id) === parseInt(w.id));
+            return `<div class="pool-item">${escapeHtml(w.full_name)} ${a ? `<small style="color:#64748b;">(${escapeHtml(a.project_name)} / ${escapeHtml(a.team_name)})</small>` : ''}</div>`;
+        }).join('');
+    });
 }
