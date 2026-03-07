@@ -1,0 +1,35 @@
+# ===================================
+# BEZPIECZEŃSTWO
+# ===================================
+
+# Wyłącz listowanie katalogów
+Options -Indexes
+
+# Blokuj dostęp do katalogu config
+RedirectMatch 403 ^/config/
+
+# Blokuj pliki konfiguracyjne
+<FilesMatch "(config|db|database|settings|\.env)">
+    Require all denied
+</FilesMatch>
+
+# Chroń pliki .htaccess
+<Files .htaccess>
+    Require all denied
+</Files>
+
+# Zabezpieczenia nagłówków
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Blokada dostępu do pliku .env
+<Files .env>
+    Order allow,deny
+    Deny from all
+</Files>
+
+# Blokada podglądu folderów
+Options -Indexes
