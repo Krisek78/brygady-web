@@ -1,4 +1,9 @@
-/* --- ZMIENNE I PODSTAWA --- */
+/* ============================================
+   PLAN BRYGAD - CSS MASTER FILE
+   Wersja: Upuszczona i skonsolidowana
+   ============================================ */
+
+/* --- 1. ZMIENNE GLOBALNE --- */
 :root {
   --bg-dark: #0f172a;
   --bg-panel: #1e293b;
@@ -14,14 +19,19 @@
   --success: #10b981;
   --warning: #f59e0b;
   
-  /* BAZA DLA SKALOWANIA */
-  font-size: 16px; 
+  /* Baza dla skalowania czcionki (przyciski +/-A) */
+  font-size: 14px;
 }
 
-* { box-sizing: border-box; outline: none; }
+/* --- 2. RESET I PODSTAWY --- */
+* { 
+  box-sizing: border-box; 
+  outline: none; 
+}
 
 body {
-  margin: 0; padding: 0;
+  margin: 0; 
+  padding: 0;
   font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   background-color: var(--bg-dark);
   color: var(--text-main);
@@ -29,11 +39,10 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  /* Wszystkie teksty dziedziczą stąd rozmiar */
-  font-size: 1rem; 
+  font-size: 1rem;
 }
 
-/* --- TOPBAR --- */
+/* --- 3. NAGŁÓWEK (TOPBAR) --- */
 .topbar {
   height: 50px;
   background-color: var(--bg-header);
@@ -43,163 +52,335 @@ body {
   padding: 0 20px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  position: relative; /* Ważne dla pozycjonowania przycisków fontu */
+  position: relative;
 }
 
-/* PRZYCISKI DO SKALOWANIA CZCIONKI */
+.title-group { 
+  display: flex; 
+  align-items: center; 
+  gap: 15px; 
+}
+
+.appname { 
+  font-weight: bold; 
+  color: var(--text-bright); 
+  font-size: 1.2rem; 
+  letter-spacing: 0.5px; 
+}
+
+.ver { 
+  font-size: 0.7rem; 
+  color: #64748b; 
+  background: #334155; 
+  padding: 2px 6px; 
+  border-radius: 3px; 
+}
+
+/* Sterowanie czcionką (+A / -A) */
 .font-controls {
   position: absolute;
   left: 320px;
   display: flex;
   gap: 8px;
 }
+
 .font-controls button {
   background: var(--bg-input);
   color: white;
   padding: 2px 8px;
   border-radius: 4px;
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 0.8rem;
   border: 1px solid var(--border);
 }
-.font-controls button:hover { background: var(--accent); }
 
-.title-group { display: flex; align-items: center; gap: 15px; }
-.appname { font-weight: bold; color: var(--text-bright); font-size: 1.2rem; letter-spacing: 0.5px; }
-.ver { font-size: 0.7rem; color: #64748b; background: #334155; padding: 2px 6px; border-radius: 3px; }
+.font-controls button:hover { 
+  background: var(--accent); 
+}
 
-.actions { display: flex; gap: 12px; align-items: center; }
+.actions { 
+  display: flex; 
+  gap: 12px; 
+  align-items: center; 
+}
 
-.tabs { display: flex; background: var(--bg-input); border-radius: 6px; padding: 2px; }
+/* --- 4. ZAKŁADKI (TABS) --- */
+.tabs { 
+  display: flex; 
+  background: var(--bg-input); 
+  border-radius: 6px; 
+  padding: 2px; 
+}
+
 .tabBtn {
-  background: transparent; border: none; color: #64748b;
-  padding: 6px 14px; cursor: pointer; font-size: 0.9rem; font-weight: 500;
-  transition: 0.2s; border-radius: 4px;
-}
-.tabBtn.active { background: var(--accent); color: white; }
-
-/* --- PRZYCISKI --- */
-.primary { 
-  background: var(--accent); color: white; 
-  padding: 6px 16px; border-radius: 6px; 
-  font-weight: 600; font-size: 0.9rem;
-}
-.ghost { 
-  background: transparent; border: 1px solid var(--border); 
-  color: var(--text-main); padding: 5px 12px; 
-  border-radius: 6px; font-size: 0.85rem;
-}
-.iconBtn { 
-  background: none; border: none; color: var(--text-main); 
-  font-size: 1.2rem; cursor: pointer; padding: 4px; 
-  border-radius: 4px; display: flex; align-items: center; justify-content: center;
+  background: transparent; 
+  border: none; 
+  color: #64748b;
+  padding: 6px 14px; 
+  cursor: pointer; 
+  font-size: 0.9rem; 
+  font-weight: 500;
+  transition: 0.2s; 
+  border-radius: 4px;
 }
 
-/* --- UKŁAD GŁÓWNY (GRID) --- */
+.tabBtn.active { 
+  background: var(--accent); 
+  color: white; 
+}
+
+.tabBtn:hover:not(.active) { 
+  color: var(--text-bright); 
+}
+
+/* --- 5. GŁÓWNY UKŁAD (GRID) --- */
 .layout {
   display: grid;
-  grid-template-columns: 300px 1fr;
-  grid-template-rows: 1fr 250px;
+  grid-template-columns: 280px 1fr;  /* Lewa kolumna + reszta */
+  grid-template-rows: 1fr 200px;     /* Góra + dolny panel */
   gap: 1px;
   background: var(--border);
   flex: 1;
   overflow: hidden;
 }
 
-/* --- PANELE --- */
-.panel { background-color: var(--bg-panel); display: flex; flex-direction: column; overflow: hidden; }
-.panel.left { grid-column: 1 / 2; grid-row: 1 / 2; border-right: 1px solid var(--border); }
-.center { grid-column: 2 / 3; grid-row: 1 / 2; background: var(--bg-dark); display: flex; flex-direction: column; overflow: hidden; }
-.panel.bottom { grid-column: 1 / 3; grid-row: 2 / 3; border-top: 1px solid var(--border); } */
+/* --- 6. PANELE - DEFINICJE POZYCJI --- */
+.panel {
+  background-color: var(--bg-panel);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
 
+/* Lewy panel (Ludzie) */
+.panel.left {
+  grid-column: 1 / 2;
+  grid-row: 1 / 2;
+  border-right: 1px solid var(--border);
+}
+
+/* Środkowy panel (Plan/Zespoły) */
+.center {
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+  background: var(--bg-dark);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* DOLNY PANEL (Zadania) - SKONSOLIDOWANE */
+.panel.bottom {
+  grid-column: 1 / 3;        /* Rozciąga się na całą szerokość */
+  grid-row: 2 / 3;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Nagłówek dolnego panelu */
 .panel.bottom .panelHeader {
-    padding: 15px 25px; /* Padding boczny ok. 25px dla lepszego wyglądu */
+  padding: 15px 25px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-panel);
+  flex-shrink: 0;
 }
 
-.panelHeader { padding: 15px; border-bottom: 1px solid var(--border); background: var(--bg-panel); } 
-
-/* --- POPRAWKA SZEROKOŚCI POLA ZADAŃ --- */
-.panel.bottom .row {
-    display: flex;
-    width: 100%;
-    gap: 15px;
-    align-items: center;
-    padding-right: 10px; /* Margines od prawej krawędzi */
+/* Tytuł sekcji (LUDZIE/ZADANIA) */
+.panelTitle { 
+  font-weight: 700; 
+  color: var(--text-bright); 
+  margin-bottom: 10px; 
+  font-size: 0.9rem; 
+  text-transform: uppercase; 
+  letter-spacing: 0.5px; 
 }
 
-#taskInput {
-    flex: 1 !important; /* Wymusza zajęcie całej wolnej przestrzeni */
-    min-width: 0;        /* Zapobiega wypychaniu przycisku poza ekran */
-    padding: 12px 15px;
-    font-size: 1.1rem;
+/* Inputy w panelach */
+.search {
+  flex: 1; 
+  background: var(--bg-input); 
+  border: 1px solid var(--border);
+  color: var(--text-bright); 
+  padding: 8px 12px; 
+  border-radius: 6px; 
+  font-size: 0.9rem;
 }
 
-#btnAddTask {
-    white-space: nowrap; /* Przycisk nie może się złamać */
-    padding: 12px 25px;
+.search:focus { 
+  border-color: var(--accent); 
 }
 
+/* --- 7. PULE (Ludzie i Zadania) --- */
+.pool {
+  flex: 1; 
+  overflow-y: auto; 
+  padding: 15px;
+  display: flex; 
+  flex-direction: column; 
+  gap: 8px;
+}
 
-.panelTitle { font-weight: 700; color: var(--text-bright); margin-bottom: 10px; font-size: 0.9rem; text-transform: uppercase; }
-.search { flex: 1; background: var(--bg-input); border: 1px solid var(--border); color: var(--text-bright); padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; }
-
-/* --- PULA --- */
-
-.pool { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
-.pool-item { background: var(--bg-input); padding: 4px 10px; border-radius: 6px; border: 1px solid transparent; cursor: grab; font-size: 0.9rem; color: var(--text-bright); display: flex; justify-content: space-between; align-items: center; }
-
+/* Element w puli (do przeciągania) */
 .pool-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 12px;
-    /* ... reszta twoich styli ... */
+  background: var(--bg-input); 
+  padding: 4px 10px; 
+  border-radius: 6px; 
+  border: 1px solid transparent;
+  cursor: grab; 
+  font-size: 1.1rem; 
+  color: var(--text-bright);
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center;
+  transition: all 0.2s;
 }
 
+.pool-item:hover { 
+  border-color: var(--accent); 
+  background: #475569; 
+}
+
+.pool-item:active { 
+  cursor: grabbing; 
+}
+
+/* Przyciski akcji w puli (Edytuj/Usuń) - pokazują się na hover */
 .pool-item-actions {
-    opacity: 0;
-    transition: opacity 0.2s;
+  display: flex; 
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.2s;
 }
 
 .pool-item:hover .pool-item-actions {
-    opacity: 1;
+  opacity: 1;
 }
 
+/* --- 8. DOLNY PANEL - SZCZEGÓŁY (Zadania) --- */
+/* Układ rzędu z Inputem i Przyciskiem Dodaj */
+.panel.bottom .row {
+  display: flex;
+  width: 100%;
+  gap: 15px;
+  align-items: center;
+}
 
-/* --- TOOLBAR --- */
-.toolbar { height: 60px; background: var(--bg-panel); border-bottom: 1px solid var(--border); display: flex; align-items: center; padding: 0 20px; gap: 15px; flex-shrink: 0; }
-.field-group { display: flex; align-items: center; gap: 8px; background: var(--bg-input); padding: 6px 12px; border-radius: 6px; }
-.field-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 600; }
-select { background: transparent; color: #ffffff; border: none; padding: 4px 8px; font-size: 0.9rem; cursor: pointer; min-width: 150px; }
-select option { background-color: var(--bg-panel); color: white; }
+/* Rozciągnięcie inputa na całą szerokość */
+#taskInput {
+  flex: 1;
+  padding: 12px;
+  font-size: 1.1rem;
+}
 
-/* --- KARTY ZESPOŁÓW --- */
+/* Przycisk Dodaj zadanie */
+#btnAddTask {
+  white-space: nowrap;
+  padding: 12px 25px;
+  font-size: 1rem;
+}
 
-/* --- WIDOK PLANU (KOREKTA UKŁADU) --- */
+/* Siatka zadań w puli (min 700px) */
+#tasksPool {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(700px, 1fr));
+  gap: 15px;
+  align-items: start;
+  padding: 15px;
+}
+
+/* Akcje zadania (edytuj/usuń) */
+.task-actions {
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.pool-item:hover .task-actions {
+  opacity: 1;
+}
+
+/* --- 9. PASEK NARZĘDZI (Toolbar) --- */
+.toolbar {
+  height: 60px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 15px;
+  flex-shrink: 0;
+}
+
+.field-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-input);
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+
+.field-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+select {
+  background: transparent;
+  color: #ffffff;
+  border: none;
+  padding: 4px 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 150px;
+}
+
+select option {
+  background-color: var(--bg-input);
+  color: white;
+}
+
+.toolbar-spacer { 
+  flex: 1; 
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-input);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+
+.zoom-label { 
+  font-size: 0.85rem; 
+  color: var(--text-bright); 
+  font-weight: 600; 
+}
+
+/* --- 10. WIDOK PLANU (Karty Zespołów) --- */
 .teams-container {
   flex: 1;
-  overflow-y: auto; /* Przewijanie tylko pionowe */
+  overflow-y: auto;
   padding: 20px;
   background: var(--bg-dark);
 }
 
+/* Siatka zespołów (min 400px) */
 .teams-grid {
   display: grid;
-  /* KLUCZ: Minimalna szerokość 400px, automatyczne wypełnianie rzędów */
   grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-  gap: 25px; /* Nieco większy odstęp dla przejrzystości */
-  width: 100%;
+  gap: 20px;
   align-items: start;
 }
 
-/*
-.teams-container { flex: 1; overflow: auto; padding: 20px; background: var(--bg-dark); }
-.teams-grid { display: flex; gap: 20px; min-width: max-content; padding-bottom: 20px; }
-*/
-
 .team-card {
-  /* Usuwamy stałe width: 300px, bo Grid zarządza szerokością */
-  width: 100%; 
+  width: 100%;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -210,7 +391,7 @@ select option { background-color: var(--bg-panel); color: white; }
 }
 
 .team-card-header {
-  padding: 15px 20px; /* Większy padding */
+  padding: 15px 20px;
   background: var(--bg-input);
   border-bottom: 1px solid var(--border);
   display: flex;
@@ -221,19 +402,19 @@ select option { background-color: var(--bg-panel); color: white; }
 .team-card-title {
   font-weight: 700;
   color: var(--text-bright);
-  font-size: 1.2rem; /* Powiększona czcionka nazwy zespołu */
+  font-size: 1.2rem;
 }
 
 .team-card-body {
-  padding: 15px 20px;
+  padding: 15px;
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Większy odstęp między sekcją LUDZIE a ZADANIA */
-  min-height: 120px;
+  gap: 20px;
+  min-height: 150px;
 }
 
 .team-section-label {
-  font-size: 0.8rem; /* Nieco większy opis sekcji */
+  font-size: 0.8rem;
   color: #64748b;
   text-transform: uppercase;
   font-weight: 700;
@@ -241,88 +422,175 @@ select option { background-color: var(--bg-panel); color: white; }
   letter-spacing: 1px;
 }
 
-/* Powiększenie tekstów wewnątrz rzędów (Pracownicy i Zadania) */
+/* Style dla elementów w zespole (Ludzie/Zadania) */
 .team-member-item, .team-task-item {
   background: #0f172a;
-  padding: 10px 15px; /* Większy padding rzędów */
+  padding: 10px 15px;
   border-radius: 6px;
-  font-size: 1.1rem;  /* Powiększona czcionka treści (jak w zadaniach) */
+  font-size: 1.1rem;
   color: var(--text-bright);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-left: 4px solid var(--accent); /* Grubszą kreska boczna */
+  border-left: 4px solid var(--accent);
   margin-bottom: 4px;
 }
 
 .team-task-item {
   border-left-color: var(--success);
 }
-/*
-.team-card { width: 300px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; }
-.team-card-header { padding: 12px 15px; background: var(--bg-input); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-.team-card-title { font-weight: 700; color: var(--text-bright); font-size: 1rem; }
-.team-card-body { padding: 15px; display: flex; flex-direction: column; gap: 15px; min-height: 150px; }
-.team-section-label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
-.team-member-item, .team-task-item { background: #0f172a; padding: 8px 10px; border-radius: 6px; font-size: 0.85rem; color: var(--text-bright); display: flex; justify-content: space-between; align-items: center; border-left: 3px solid var(--accent); }
-.team-task-item { border-left-color: var(--success); }
-*/
 
-/* --- WIDOKI --- */
-.view { display: none; width: 100%; height: 100%; overflow: auto; }
-.view.active { display: block; }
-.view-content { padding: 30px; background: var(--bg-panel); margin: 20px; border-radius: 8px; }
-.view-title { font-size: 1.3rem; font-weight: 700; color: var(--text-bright); margin-bottom: 20px; }
+/* Strefa do upuszczania (Drag & Drop) */
+.drop-zone {
+  min-height: 40px;
+  border: 2px dashed transparent;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 5px;
+  transition: all 0.2s;
+}
 
-/* --- MODALE --- */
-/* OLD */
-/*
-.modal-card { background: var(--bg-panel); width: 350px; padding: 25px; border-radius: 12px; border: 1px solid var(--border); }
-.modal-header { display: flex; justify-content: space-between; margin-bottom: 15px; color: #fff; font-size: 1.1rem; }
-.modal-card input { width: 100%; padding: 10px; margin-bottom: 15px; background: var(--bg-input); border: 1px solid var(--border); color: #fff; border-radius: 6px; font-size: 1rem; }
-*/
-/* --- MODALE (POPRAWIONE CENTROWANIE) --- */
+.drop-zone:hover {
+  border-color: var(--accent);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+/* --- 11. WIDOK LUDZIE (Tabela) --- */
+.people-table-container {
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+}
+
+.people-table {
+  width: 100%;
+  max-width: 1200px;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 1.2rem;
+  background: var(--bg-card);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.people-table th {
+  text-align: left;
+  padding: 15px 25px;
+  background: var(--bg-input);
+  color: var(--text-bright);
+  cursor: pointer;
+  border-bottom: 3px solid var(--accent);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 1rem;
+}
+
+.people-table th:hover {
+  background: var(--accent);
+}
+
+.people-table td {
+  padding: 18px 25px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-bright);
+  vertical-align: middle;
+}
+
+.people-table tr:last-child td {
+  border-bottom: none;
+}
+
+.people-table tr:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.status-free {
+  color: #64748b;
+  font-style: italic;
+  font-weight: normal;
+}
+
+.status-assigned {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.sort-icon {
+  margin-left: 8px;
+  font-size: 0.8rem;
+  opacity: 0.6;
+}
+
+/* --- 12. WIDOK UŻYTKOWNICY (Admin) --- */
+.users-view-container {
+  padding: 30px;
+}
+
+.users-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1.1rem;
+}
+
+.users-table th,
+.users-table td {
+  padding: 12px 20px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+.users-table th {
+  background: var(--bg-input);
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.users-table td {
+  color: var(--text-main);
+}
+
+.users-table tr:hover {
+  background: rgba(255,255,255,0.02);
+}
+
+/* --- 13. MODALE --- */
 .modal {
-  position: fixed; 
-  top: 0; 
-  left: 0; 
-  width: 100vw; /* Cała szerokość okna */
-  height: 100vh; /* Cała wysokość okna */
-  background: rgba(0, 0, 0, 0.8); /* Ciemne tło pod spodem */
-  z-index: 9999; /* Bardzo wysoki priorytet, nad wszystkim innym */
-  
-  /* Centrowanie zawartości */
-  display: flex; 
-  justify-content: center; 
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.8);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
   align-items: center;
-  
-  backdrop-filter: blur(4px); /* Efekt rozmycia tła za oknem */
+  backdrop-filter: blur(4px);
 }
 
-/* Ukrywanie modala */
-.modal[hidden] { 
-  display: none !important; 
+.modal[hidden] {
+  display: none !important;
 }
 
-/* Karta wewnątrz modala */
 .modal-card {
   background: var(--bg-panel);
   width: 100%;
-  max-width: 400px; /* Maksymalna szerokość okienka */
+  max-width: 450px;
   padding: 30px;
   border-radius: 12px;
   border: 1px solid var(--border);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-  
-  /* Zabezpieczenie przed "przyklejeniem" do krawędzi na telefonach */
-  margin: 20px; 
+  margin: 20px;
 }
 
-.modal-header { 
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
-  margin-bottom: 20px; 
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
   color: #fff;
 }
 
@@ -331,164 +599,181 @@ select option { background-color: var(--bg-panel); color: white; }
   font-size: 1.4rem;
 }
 
-.modal-card input {
-  width: 100%; 
-  padding: 12px; 
-  margin-bottom: 20px;
-  background: var(--bg-input); 
+.modal-card input,
+.modal-card select {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  background: var(--bg-input);
   border: 1px solid var(--border);
-  color: #fff; 
-  border-radius: 8px;
+  color: #fff;
+  border-radius: 6px;
   font-size: 1.1rem;
 }
 
-.modal-card input:focus {
+.modal-card input:focus,
+.modal-card select:focus {
   border-color: var(--accent);
 }
 
-.modal-actions { 
-  display: flex; 
-  justify-content: flex-end; 
-  gap: 12px; 
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
 }
 
-
-/* --- POWIADOMIENIA (TOAST) --- */
-.toast { position: fixed; bottom: 220px; right: 20px; background: var(--accent); color: white; padding: 10px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; z-index: 2000; box-shadow: 0 10px 15px rgba(0,0,0,0.3); }
-
-/* --- SCROLLBAR --- */
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--bg-dark); }
-::-webkit-scrollbar-thumb { background: var(--bg-input); border-radius: 4px; }
-
-/* ---  TABELA LUDZI --- */
-.people-table-container {
-    display: flex;
-    justify-content: center; /* Środkuje tabelę w kontenerze */
-    padding: 20px;
+/* --- 14. PRZYCISKI GLOBALNE --- */
+button {
+  cursor: pointer;
+  font-family: inherit;
+  border: none;
+  transition: 0.2s;
 }
 
-.people-table {
-    min-width: 50%; /* Minimum 50% szerokości */
-    width: 80%;     /* Ale optymalnie 80% dla lepszego wyglądu */
-    border-collapse: separate;
-    border-spacing: 0;
-    font-size: 1.2rem; /* Większa czcionka bazowa dla tego widoku */
-    background: var(--bg-card);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+.primary {
+  background: var(--accent);
+  color: white;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
 }
 
-.people-table th {
-    text-align: left;
-    padding: 15px 25px; /* Duży padding boczny */
-    background: var(--bg-input);
-    color: var(--text-bright);
-    cursor: pointer;
-    border-bottom: 3px solid var(--accent);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-size: 1rem;
-    transition: background 0.2s;
+.primary:hover {
+  background: var(--accent-hover);
 }
 
-.people-table th:hover {
-    background: var(--accent);
+.ghost {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.85rem;
 }
 
-.people-table td {
-    padding: 18px 25px; /* Padding góra/dół 18px, boki 25px */
-    border-bottom: 1px solid var(--border);
-    color: var(--text-bright);
-    vertical-align: middle;
+.ghost:hover {
+  border-color: #475569;
+  color: var(--text-bright);
+  background: var(--bg-input);
 }
 
-.people-table tr:last-child td {
-    border-bottom: none;
+.iconBtn {
+  background: none;
+  border: none;
+  color: var(--text-main);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.people-table tr:hover {
-    background: rgba(255,255,255,0.03);
+.iconBtn:hover {
+  background: var(--bg-input);
+  color: var(--text-bright);
 }
 
-/* Kolory statusów */
-.status-free { 
-    color: #64748b; 
-    font-style: italic; 
-    font-weight: normal;
+/* --- 15. POWIADOMIENIA (TOAST) --- */
+.toast {
+  position: fixed;
+  bottom: 220px;
+  right: 20px;
+  background: var(--accent);
+  color: white;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  z-index: 2000;
+  box-shadow: 0 10px 15px rgba(0,0,0,0.3);
 }
 
-.status-assigned { 
-    color: var(--accent); 
-    font-weight: 600; 
+/* --- 16. SCROLLBAR --- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-/* Ikony sortowania */
-.sort-icon {
-    margin-left: 8px;
-    font-size: 0.8rem;
-    opacity: 0.6;
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
 }
 
-
-/* Z A D A N I A  */
-/* --- WIDOK ZADAŃ (Siatka adaptacyjna) --- */
-.tasks-view-grid {
-    display: grid;
-    /* Automatyczne kolumny: min 600px, max rozciągnij ile się da */
-    grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
-    gap: 25px;
-    padding: 20px;
-    width: 100%;
+::-webkit-scrollbar-thumb {
+  background: var(--bg-input);
+  border-radius: 4px;
 }
 
-.task-group-card {
-    background: var(--bg-card);
-    border-radius: 12px;
-    border: 1px solid var(--border);
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    height: fit-content; /* Karta dopasuje się do ilości zadań */
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
 }
 
-.task-group-header {
-    background: var(--bg-input);
-    padding: 15px 20px;
-    border-bottom: 3px solid var(--success);
-    font-weight: bold;
-    color: var(--text-bright);
-    font-size: 1.2rem; /* Czytelna czcionka */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+/* --- 17. WIDOKI (VIEW) --- */
+.view {
+  display: none;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
 }
 
-.task-list-table {
-    width: 100%;
-    border-collapse: collapse;
+.view.active {
+  display: block;
 }
 
-.task-list-table td {
-    padding: 15px 25px;
-    border-bottom: 1px solid var(--border);
-    color: var(--text-bright);
-    line-height: 1.6;
-    font-size: 1.1rem;
+.view-content {
+  padding: 30px;
+  background: var(--bg-panel);
+  margin: 20px;
+  border-radius: 8px;
 }
 
-.task-list-table tr:last-child td {
-    border-bottom: none;
+.view-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-bright);
+  margin-bottom: 20px;
 }
 
-.task-list-table tr:hover {
-    background: rgba(255,255,255,0.03);
+/* --- 18. LISTY --- */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.no-tasks-info {
-    padding: 20px;
-    color: var(--text-main);
-    font-style: italic;
-    text-align: center;
-    font-size: 1rem;
+/* --- 19. RESPONSYWNOŚĆ (Mobile) --- */
+@media (max-width: 768px) {
+  .layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+  }
+  
+  .panel.left {
+    grid-column: 1;
+    grid-row: 1;
+    max-height: 200px;
+  }
+  
+  .center {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  
+  .panel.bottom {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  
+  .teams-grid,
+  #tasksPool {
+    grid-template-columns: 1fr; /* Jedna kolumna na mobile */
+  }
+  
+  .font-controls {
+    position: static;
+    margin-left: auto;
+  }
 }
