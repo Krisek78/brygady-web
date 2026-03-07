@@ -41,18 +41,19 @@ try {
     // --- 3. PRZYPISYWANIE ZADANIA DO ZESPOŁU (LUB COFANIE) ---
     elseif ($method === 'PUT') {
         $data = json_decode(file_get_contents("php://input"), true);
-        
-        if (empty($data['id'])) {
-            echo json_encode(['success' => false, 'message' => 'Brak ID zadania!']);
-            exit;
+        if (empty($data['id'])) throw new Exception("Brak ID zadania");
+
+        // EDYCJA TYTUŁU (gdy przesłano pole 'title')
+        if (isset($data['title'])) {
+            $stmt = $pdo->prepare("UPDATE tasks SET title = ? WHERE id = ?");
+            $stmt->execute([trim($data['title']), (int)$data['id']]);
+        } 
+        // PRZYPISANIE DO ZESPOŁU (gdy przesłano assigned_to_team_id)
+        else {
+            $teamId = !empty($data['assigned_to_team_id']) ? (int)$data['assigned_to_team_id'] : null;
+            $stmt = $pdo->prepare("UPDATE tasks SET assigned_to_team_id = ? WHERE id = ?");
+            $stmt->execute([$teamId, (int)$data['id']]);
         }
-
-        // Jeśli assigned_to_team_id jest pusty/null, zadanie wróci do puli
-        $teamId = !empty($data['assigned_to_team_id']) ? (int)$data['assigned_to_team_id'] : null;
-
-        $stmt = $pdo->prepare("UPDATE tasks SET assigned_to_team_id = ? WHERE id = ?");
-        $stmt->execute([$teamId, (int)$data['id']]);
-        
         echo json_encode(['success' => true]);
     }
 

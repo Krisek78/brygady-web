@@ -100,33 +100,47 @@ function filterWorkers() {
 
 // --- RENDEROWANIE PULI ZADAŃ ---
 function renderTasksPool() {
-    const c = document.getElementById('tasksPool'); 
-    if (!c) return; 
-    c.innerHTML = '';
+    const container = document.getElementById('tasksPool');
+    if (!container) return;
+    container.innerHTML = '';
 
-    // FILTROWANIE: Pokazujemy tylko zadania, które nie mają przypisanego zespołu
-    const unassignedTasks = allTasks.filter(t => {
-        return t.assigned_to_team_id === null || t.assigned_to_team_id === 0 || t.assigned_to_team_id === undefined;
-    });
-
-    if (unassignedTasks.length === 0) {
-        c.innerHTML = '<div style="color:#64748b;text-align:center;margin-top:30px;">Brak wolnych zadań.</div>';
+    // Filtrowanie - tylko nieprzypisane zadania
+    const unassigned = allTasks.filter(t => !t.assigned_to_team_id);
+    
+    if (unassigned.length === 0) {
+        container.innerHTML = '<div style="color:#64748b; text-align:center; grid-column: 1/-1; margin-top:20px;">Brak wolnych zadań w puli.</div>';
         return;
     }
 
-    unassignedTasks.forEach(t => {
-        const el = document.createElement('div'); 
-        el.className = 'pool-item'; 
-        el.draggable = true; 
-        el.textContent = t.title;
+    // Generowanie siatki (grid) z zadaniami
+    unassigned.forEach(t => {
+        const el = document.createElement('div');
+        el.className = 'pool-item';
+        el.draggable = true;
         el.dataset.id = t.id;
         el.dataset.type = 'task';
-
-        el.addEventListener('dragstart', (e) => { 
-            draggedItem = { id: parseInt(t.id), type: 'task' }; 
-            e.dataTransfer.setData('text/plain', JSON.stringify(draggedItem)); 
+        
+        // Struktura z przyciskami akcji
+        el.innerHTML = `
+            <span style="flex:1; margin-right:15px; line-height:1.4;">${escapeHtml(t.title)}</span>
+            <div class="task-actions" style="display:flex; gap:8px; opacity:0; transition:opacity 0.2s;">
+                <button class="iconBtn" onclick="event.stopPropagation(); editTask(${t.id}, '${escapeHtml(t.title)}')" title="Edytuj treść">✎</button>
+                <button class="iconBtn" style="color:var(--danger);" onclick="event.stopPropagation(); deleteTask(${t.id})" title="Usuń trwale">🗑</button>
+            </div>
+        `;
+        
+        // Pokazywanie przycisków na hover
+        el.addEventListener('mouseenter', () => el.querySelector('.task-actions').style.opacity = '1');
+        el.addEventListener('mouseleave', () => el.querySelector('.task-actions').style.opacity = '0');
+        
+        el.addEventListener('dragstart', (e) => {
+            draggedItem = { id: parseInt(t.id), type: 'task' };
+            e.dataTransfer.setData('text/plain', JSON.stringify(draggedItem));
+            setTimeout(() => el.style.opacity = '0.5', 0);
         });
-        c.appendChild(el);
+        el.addEventListener('dragend', () => { el.style.opacity = '1'; draggedItem = null; });
+        
+        container.appendChild(el);
     });
 }
 
@@ -322,11 +336,18 @@ async function removeFromTeam(type, itemId, teamId) {
 }
 
 // --- CRUD ---
+
 async function saveWorker() {
     const nameInput = document.getElementById('wmName');
     const n = nameInput.value.trim(); 
     if (!n) return;
 
+    // WALIDACJA DŁUGOŚCI
+    if (n.length > 100) {
+        alert("⚠️ Imię i nazwisko są zbyt długie!\n\nMaksymalna długość to 100 znaków.\nAktualnie wpisano: " + n.length + " znaków.\n\nSkróć tekst i spróbuj ponownie.");
+        return;
+    }
+	
     try {
         const res = await fetch('api/workers.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({full_name:n}) });
         const r = await res.json();
@@ -352,11 +373,13 @@ async function saveWorker() {
 /* N E W */
 async function addTaskFromInput() {
     const input = document.getElementById('taskInput');
-    const title = input.value.trim();
+    const title = input.value.trim(); 
+    if(!title || !currentProjectId) return alert("Wybierz budowę i wpisz treść!");
 
-    // 1. Sprawdź czy wpisano treść
-    if (!title) {
-        return; // Nic nie rób, jeśli pole jest puste
+    // WALIDACJA DŁUGOŚCI
+    if (title.length > 255) {
+        alert("⚠️ Treść zadania jest zbyt długa!\n\nMaksymalna długość to 255 znaków.\nAktualnie wpisano: " + title.length + " znaków.\n\nSkróć opis lub podziel zadanie na mniejsze części.");
+        return;
     }
 
     // 2. Sprawdź czy wybrano budowę (Zadanie musi należeć do jakiegoś projektu)
@@ -408,9 +431,32 @@ async function deleteTeam(id) {
     } 
 }
 
+/*
 async function addProject(n) {
     const res = await fetch('api/projects.php', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name:n}) });
     if((await res.json()).success) loadData();
+}
+*/
+
+async function addProject(n) {
+    if (!n) return;
+    
+    // WALIDACJA: Nazwa budowy max 100 znaków
+    if (n.length > 100) {
+        alert("⚠️ Nazwa budowy jest zbyt długa!\n\nMaksymalna długość to 100 znaków.\nAktualnie wpisano: " + n.length + " znaków.\n\nUżyj krótszej nazwy.");
+        return;
+    }
+
+    const res = await fetch('api/projects.php', { 
+        method:'POST', 
+        headers:{'Content-Type':'application/json'}, 
+        body:JSON.stringify({name:n}) 
+    });
+    
+    if((await res.json()).success) {
+        loadData();
+        showToast('Dodano budowę');
+    }
 }
 
 async function deleteCurrentProject() {
@@ -505,6 +551,18 @@ if (taskInput) {
     // Inicjalizacja fontu przy starcie
     applyFontSize();
 	
+// Edycja zadania okno modal
+const btnSaveTaskEdit = document.getElementById('btnSaveTaskEdit');
+if(btnSaveTaskEdit) btnSaveTaskEdit.onclick = () => saveTaskEdit();
+
+// Dodatkowo - zamykanie modala po kliknięciu X lub "Anuluj" (jeśli nie masz globalnej obsługi)
+document.querySelectorAll('#editTaskModal .modalClose').forEach(btn => {
+    btn.onclick = () => {
+        closeModal('editTaskModal');
+        currentEditingTaskId = null;
+    };
+});
+
 	
 }
 
@@ -849,4 +907,64 @@ async function deleteWorker(id) {
         }
     } catch (e) { console.error(e); }
 }
+
+// Zmienna do przechowywania ID edytowanego zadania
+let currentEditingTaskId = null;
+
+function editTask(id, oldTitle) {
+    currentEditingTaskId = id;
+    const textarea = document.getElementById('editTaskText');
+    textarea.value = oldTitle; // Wstawiamy obecną treść
+    openModal('editTaskModal');
+    textarea.focus(); // Auto-focus na pole
+}
+
+// Funkcja zapisywania zmian z modala
+async function saveTaskEdit() {
+    if (!currentEditingTaskId) return;
+    
+    const newTitle = document.getElementById('editTaskText').value.trim();
+    if (!newTitle) {
+        alert("Treść zadania nie może być pusta!");
+        return;
+    }
+
+    try {
+        const res = await fetch('api/tasks.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: currentEditingTaskId, title: newTitle })
+        });
+        const r = await res.json();
+        if(r.success) {
+            closeModal('editTaskModal');
+            currentEditingTaskId = null;
+            showToast('Zadanie zaktualizowane');
+            await loadData();
+        } else {
+            alert(r.message || "Błąd zapisu");
+        }
+    } catch (e) { 
+        console.error(e); 
+        alert("Błąd połączenia");
+    }
+}
+
+async function deleteTask(id) {
+    if (!confirm("Czy na pewno chcesz trwale usunąć to zadanie?")) return;
+
+    try {
+        const res = await fetch('api/tasks.php', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id })
+        });
+        const r = await res.json();
+        if(r.success) {
+            showToast('Zadanie usunięte');
+            await loadData();
+        }
+    } catch (e) { console.error(e); }
+}
+
 

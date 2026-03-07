@@ -234,6 +234,8 @@ body {
   justify-content: space-between; 
   align-items: center;
   transition: all 0.2s;
+  position: relative;
+
 }
 
 .pool-item:hover { 

@@ -125,7 +125,20 @@ $userRole = $_SESSION['role']; // <--- TEJ LINII BRAKOWAŁO
         </div>
     </div>
 </div>
-
+<!-- Modal edycji zadania -->
+<div id="editTaskModal" class="modal" hidden>
+    <div class="modal-card" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3>Edycja zadania</h3>
+            <button class="modalClose iconBtn" data-modal="editTaskModal">✕</button>
+        </div>
+        <textarea id="editTaskText" rows="5" style="width:100%; padding:12px; background:var(--bg-input); border:1px solid var(--border); color:white; border-radius:6px; font-size:1.1rem; resize:vertical; font-family:inherit;"></textarea>
+        <div class="modal-actions">
+            <button class="modalClose ghost" data-modal="editTaskModal">Anuluj</button>
+            <button id="btnSaveTaskEdit" class="primary">Zapisz zmiany</button>
+        </div>
+    </div>
+</div>
   <div id="toast" class="toast" hidden></div>
   <script src="js/dashboard.js"></script>
 </body>
