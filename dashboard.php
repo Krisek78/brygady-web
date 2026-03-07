@@ -24,7 +24,7 @@ $userRole = $_SESSION['role']; // <--- TEJ LINII BRAKOWAŁO
 </head>
 <body>
   <header class="topbar">
-    <div class="title-group"><div class="appname">PLAN BRYGAD</div><div class="ver">v0.5.0</div></div>
+    <div class="title-group"><div class="appname">PLAN BRYGAD</div></div>
 	<!-- DODAJ TO TUTAJ -->
     <div class="font-controls">
       <button id="btnFontDown" title="Zmniejsz czcionkę">-A</button>
