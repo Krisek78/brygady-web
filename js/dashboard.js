@@ -187,8 +187,17 @@ async function selectProject(id) {
             const card = document.createElement('div');
             card.className = 'team-card';
             
+            // ZMODYFIKOWANA SEKCJA LUDZI - dodano przycisk edycji ✎
             const mHtml = team.members?.length ? 
-                team.members.map(m => `<div class="team-member-item"><span>${escapeHtml(m.full_name)}</span><button class="iconBtn" onclick="removeFromTeam('worker', ${m.id}, ${team.id})">↻</button></div>`).join('') : 
+                team.members.map(m => `
+                    <div class="team-member-item">
+                        <span>${escapeHtml(m.full_name)}</span>
+                        <div style="display:flex; gap:4px;">
+                            <button class="iconBtn" onclick="event.stopPropagation(); editWorkerInPlace(${m.id}, '${escapeHtml(m.full_name)}')" title="Edytuj imię i nazwisko">✎</button>
+                            <button class="iconBtn" onclick="event.stopPropagation(); removeFromTeam('worker', ${m.id}, ${team.id})" title="Cofnij do puli">↻</button>
+                        </div>
+                    </div>
+                `).join('') : 
                 '<div style="color:#64748b; font-size:12px; padding:8px;">Brak ludzi</div>';
             
             const tHtml = team.tasks?.length ? 
@@ -226,13 +235,11 @@ async function selectProject(id) {
         area.innerHTML = '<div style="color:red">Błąd podczas ładowania zespołów.</div>';
     }
 
-// ZADANIA - TASK	
-	const activeTab = document.querySelector('.tabBtn.active');
+    // Odświeżenie widoku zadań jeśli aktywny
+    const activeTab = document.querySelector('.tabBtn.active');
     if (activeTab && activeTab.dataset.view === 'tasks') {
         renderTasksListFull();
     }
-// KONIEC ZADANIA	
-	
 }
 
 // Dodaj też samą funkcję editTeamName, jeśli jej nie masz:
@@ -507,6 +514,121 @@ async function editTeamName(teamId, oldName) {
     }
 }
 
+// ==================== EDYCJA PRACOWNIKA W MIEJSCU ====================
+window.editWorkerInPlace = async function(workerId, currentName) {
+    const newName = prompt("Edytuj imię i nazwisko pracownika:", currentName);
+    if (!newName || newName.trim() === '' || newName.trim() === currentName) return;
+    
+    if (newName.length > 100) {
+        alert("⚠️ Imię i nazwisko są zbyt długie (max 100 znaków)!");
+        return;
+    }
+
+    try {
+        const res = await fetch('api/workers.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: workerId, full_name: newName.trim() })
+        });
+        if((await res.json()).success) {
+            showToast('Zaktualizowano dane pracownika');
+            await loadData();
+        }
+    } catch (e) { alert("Błąd edycji"); }
+};
+
+// ==================== EDYCJA NAZWY ZESPOŁU ====================
+window.editTeamName = async function(teamId, oldName) {
+    const newName = prompt("Nowa nazwa zespołu:", oldName);
+    if (!newName || newName.trim() === '' || newName === oldName) return;
+    
+    try {
+        const res = await fetch('api/teams.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: teamId, team_name: newName.trim() })
+        });
+        if((await res.json()).success) {
+            showToast('Zmieniono nazwę zespołu');
+            selectProject(currentProjectId);
+        }
+    } catch (e) { alert("Błąd zmiany nazwy"); }
+};
+
+// ==================== USUWANIE ZESPOŁU ====================
+window.deleteTeam = async function(id) { 
+    if(!confirm('Usunąć zespół? Wszyscy pracownicy wrócą do puli.')) return;
+    try {
+        await fetch('api/teams.php', {
+            method: 'DELETE',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({id: id})
+        }); 
+        selectProject(currentProjectId); 
+        showToast('Zespół usunięty');
+    } catch(e) { alert("Błąd usuwania"); }
+};
+
+// ==================== ZMIANA HASŁA UŻYTKOWNIKA (ADMIN) ====================
+window.changeUserPassword = async function(userId) {
+    const newPass = prompt("Wpisz nowe hasło dla użytkownika (min. 4 znaki):");
+    if (!newPass || newPass.length < 4) return alert("Hasło za krótkie!");
+
+    try {
+        const res = await fetch('api/users.php', {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ id: userId, password: newPass })
+        });
+        const r = await res.json();
+        if (r.success) showToast('Hasło zmienione pomyślnie');
+        else alert(r.message);
+    } catch (e) { alert('Błąd sieci'); }
+};
+
+// ==================== EDYCJA ZADANIA (MODAL) ====================
+window.editTask = function(id, oldTitle) {
+    currentEditingTaskId = id;
+    const textarea = document.getElementById('editTaskText');
+    if (textarea) textarea.value = oldTitle;
+    openModal('editTaskModal');
+};
+
+// ==================== ZAPIS EDYCJI ZADANIA ====================
+window.saveTaskEdit = async function() {
+    if (!currentEditingTaskId) return;
+    const newTitle = document.getElementById('editTaskText')?.value.trim();
+    
+    if (!newTitle) {
+        alert("Treść zadania nie może być pusta!");
+        return;
+    }
+    
+    if (newTitle.length > 255) {
+        alert("⚠️ Treść zadania jest zbyt długa (max 255 znaków)!");
+        return;
+    }
+
+    try {
+        const res = await fetch('api/tasks.php', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: currentEditingTaskId, title: newTitle })
+        });
+        const r = await res.json();
+        if(r.success) {
+            closeModal('editTaskModal');
+            currentEditingTaskId = null;
+            showToast('Zadanie zaktualizowane');
+            await loadData();
+        } else {
+            alert(r.message || "Błąd zapisu");
+        }
+    } catch (e) { 
+        console.error(e); 
+        alert("Błąd połączenia");
+    }
+};
 
 // --- UI LISTENERS ---
 function setupEventListeners() {
@@ -995,4 +1117,29 @@ async function deleteTask(id) {
     } catch (e) { console.error(e); }
 }
 
+const btnUpdateVersion = document.getElementById('btnUpdateVersion');
+if (btnUpdateVersion) {
+    btnUpdateVersion.onclick = async () => {
+        if (!confirm('Czy na pewno chcesz zatwierdzić aktualną wersję systemu?\n\nSpowoduje to:\n- Odczytanie daty modyfikacji plików JS/CSS z serwera\n- Zapisanie jej jako data kompilacji\n- Wymuszenie odświeżenia u wszystkich użytkowników\n\nKontynuować?')) return;
+        
+        try {
+            const res = await fetch('api/update_version.php', { method: 'POST' });
+            const data = await res.json();
+            
+            if (data.success) {
+                // Zapisz do localStorage, aby odświeżyć u admina
+                localStorage.setItem('app_version', data.version);
+                localStorage.setItem('build_date', data.build_date);
+                
+                document.getElementById('versionStatus').textContent = 
+                    `✅ Zaktualizowano: ${data.build_date}`;
+                showToast('Wersja systemu zaktualizowana! Użytkownicy zobaczą zmiany po ponownym wejściu.');
+            } else {
+                alert('Błąd: ' + data.message);
+            }
+        } catch (e) {
+            alert('Błąd połączenia z serwerem');
+        }
+    };
+}
 
