@@ -78,6 +78,10 @@ $userRole = $_SESSION['role']; // <--- TEJ LINII BRAKOWAŁO
 				<div class="view-header" style="display:flex; justify-content:space-between; align-items:center;">
 					<div class="view-title">Zarządzanie Użytkownikami Systemu</div>
 					<button class="primary" id="btnAddUser">+ Dodaj Użytkownika</button>
+					<button class="ghost" id="btnUpdateVersion" style="border-color: var(--success); color: var(--success);">
+						🔄 Zatwierdź nową wersję systemu
+					</button>
+					<span id="versionStatus" style="font-size: 0.8rem; color: var(--text-muted); margin-left: 10px;"></span>
 				</div>
 				<div id="usersViewList"></div>
 			</div>
