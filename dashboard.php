@@ -41,7 +41,7 @@ $userRole = $_SESSION['role']; // <--- TEJ LINII BRAKOWAŁO
 				<?php endif; ?>
 		</div>
       <button class="primary">DRUKUJ (PDF)</button>
-	  <button class="ghost" id="btnAbout" title="Informacje o programie">ℹ️ O programie</button>
+	  <button id="btnAbout" class="ghost" title="Informacje o programie">ℹ️ O programie</button>
       <button onclick="location.href='logout.php'" class="ghost" style="border-color:#ef4444;color:#ef4444;">Wyloguj</button>
     </div>
   </header>
@@ -140,6 +140,7 @@ $userRole = $_SESSION['role']; // <--- TEJ LINII BRAKOWAŁO
         </div>
     </div>
 </div>
+
 <!-- Modal O Programie -->
 <div id="aboutModal" class="modal" hidden>
     <div class="modal-card" style="max-width: 450px; text-align: center;">
@@ -155,6 +156,7 @@ $userRole = $_SESSION['role']; // <--- TEJ LINII BRAKOWAŁO
                 Data kompilacji: <span id="aboutBuild">-</span>
             </p>
             <p style="font-size: 0.8rem; color: var(--text-main); margin-top: 15px;">
+                <!-- WAŻNE: id="copyrightYear" musi być obecne -->
                 © <span id="copyrightYear">2024</span> KBRInvest sp. z o.o.<br>
                 Wszelkie prawa zastrzeżone.<br><br>
                 <span style="color: #64748b;">Pomoc techniczna:</span><br>

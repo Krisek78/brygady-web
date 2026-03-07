@@ -552,23 +552,29 @@ function setupEventListeners() {
     applyFontSize();
 	
 // Obsługa przycisku O Programie
-	document.getElementById('btnAbout').onclick = () => {
-		const version = localStorage.getItem('app_version') || '1.0.0';
-		const buildDate = localStorage.getItem('build_date') || '-';
+document.getElementById('btnAbout').onclick = () => {
+    const version = localStorage.getItem('app_version') || '1.0.0';
+    const buildDate = localStorage.getItem('build_date') || '-';
     
-	document.getElementById('aboutVersion').textContent = version;
-    document.getElementById('aboutBuild').textContent = buildDate;
+    // Debugowanie - sprawdźmy czy elementy istnieją
+    const elVersion = document.getElementById('aboutVersion');
+    const elBuild = document.getElementById('aboutBuild');
+    const elYear = document.getElementById('copyrightYear');
     
-    // Dynamiczny rok copyright na podstawie daty kompilacji
-    let copyrightYear = new Date().getFullYear(); // Domyślnie aktualny rok
-    if (buildDate && buildDate !== '-') {
-        try {
-            copyrightYear = new Date(buildDate).getFullYear();
-        } catch (e) {
-            console.log('Błąd parsowania daty:', e);
+    if (!elVersion) console.error('BŁĄD: Nie ma elementu #aboutVersion');
+    if (!elBuild) console.error('BŁĄD: Nie ma elementu #aboutBuild');
+    if (!elYear) console.error('BŁĄD: Nie ma elementu #copyrightYear');
+    
+    if (elVersion) elVersion.textContent = version;
+    if (elBuild) elBuild.textContent = buildDate;
+    
+    if (elYear) {
+        let copyrightYear = new Date().getFullYear();
+        if (buildDate && buildDate !== '-') {
+            try { copyrightYear = new Date(buildDate).getFullYear(); } catch (e) {}
         }
+        elYear.textContent = copyrightYear;
     }
-    document.getElementById('copyrightYear').textContent = copyrightYear;
     
     openModal('aboutModal');
 };
