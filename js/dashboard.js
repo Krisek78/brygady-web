@@ -533,37 +533,59 @@ function setupEventListeners() {
 	if (btnSaveUser) btnSaveUser.onclick = () => saveUser();
 	
 	// Obsługa kliknięcia przycisku "Dodaj" przy zadaniach
-const btnAddTask = document.getElementById('btnAddTask');
-if (btnAddTask) {
-    btnAddTask.onclick = () => addTaskFromInput();
-}
+	const btnAddTask = document.getElementById('btnAddTask');
+		if (btnAddTask) {
+			btnAddTask.onclick = () => addTaskFromInput();
+		}
 
-// Obsługa klawisza Enter w polu zadania
-const taskInput = document.getElementById('taskInput');
-if (taskInput) {
-    taskInput.onkeypress = (e) => { 
-        if (e.key === 'Enter') addTaskFromInput(); 
-    };
-}
+	// Obsługa klawisza Enter w polu zadania
+	const taskInput = document.getElementById('taskInput');
+		if (taskInput) {
+			taskInput.onkeypress = (e) => { 
+				if (e.key === 'Enter') addTaskFromInput(); 
+		};
+	}
     document.getElementById('btnFontUp').onclick = () => changeFontSize(1);
     document.getElementById('btnFontDown').onclick = () => changeFontSize(-1);
     
     // Inicjalizacja fontu przy starcie
     applyFontSize();
 	
-// Edycja zadania okno modal
-const btnSaveTaskEdit = document.getElementById('btnSaveTaskEdit');
-if(btnSaveTaskEdit) btnSaveTaskEdit.onclick = () => saveTaskEdit();
+// Obsługa przycisku O Programie
+	document.getElementById('btnAbout').onclick = () => {
+		const version = localStorage.getItem('app_version') || '1.0.0';
+		const buildDate = localStorage.getItem('build_date') || '-';
+    
+	document.getElementById('aboutVersion').textContent = version;
+    document.getElementById('aboutBuild').textContent = buildDate;
+    
+    // Dynamiczny rok copyright na podstawie daty kompilacji
+    let copyrightYear = new Date().getFullYear(); // Domyślnie aktualny rok
+    if (buildDate && buildDate !== '-') {
+        try {
+            copyrightYear = new Date(buildDate).getFullYear();
+        } catch (e) {
+            console.log('Błąd parsowania daty:', e);
+        }
+    }
+    document.getElementById('copyrightYear').textContent = copyrightYear;
+    
+    openModal('aboutModal');
+};
 
-// Dodatkowo - zamykanie modala po kliknięciu X lub "Anuluj" (jeśli nie masz globalnej obsługi)
-document.querySelectorAll('#editTaskModal .modalClose').forEach(btn => {
-    btn.onclick = () => {
-        closeModal('editTaskModal');
-        currentEditingTaskId = null;
+
+	// Edycja zadania okno modal
+	const btnSaveTaskEdit = document.getElementById('btnSaveTaskEdit');
+	if(btnSaveTaskEdit) btnSaveTaskEdit.onclick = () => saveTaskEdit();
+
+	// Dodatkowo - zamykanie modala po kliknięciu X lub "Anuluj" (jeśli nie masz globalnej obsługi)
+	document.querySelectorAll('#editTaskModal .modalClose').forEach(btn => {
+		btn.onclick = () => {
+			closeModal('editTaskModal');
+			currentEditingTaskId = null;
     };
-});
+	});
 
-	
 }
 
 window.switchView = (v) => {

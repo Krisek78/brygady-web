@@ -41,6 +41,7 @@ $userRole = $_SESSION['role']; // <--- TEJ LINII BRAKOWAŁO
 				<?php endif; ?>
 		</div>
       <button class="primary">DRUKUJ (PDF)</button>
+	  <button class="ghost" id="btnAbout" title="Informacje o programie">ℹ️ O programie</button>
       <button onclick="location.href='logout.php'" class="ghost" style="border-color:#ef4444;color:#ef4444;">Wyloguj</button>
     </div>
   </header>
@@ -139,6 +140,33 @@ $userRole = $_SESSION['role']; // <--- TEJ LINII BRAKOWAŁO
         </div>
     </div>
 </div>
+<!-- Modal O Programie -->
+<div id="aboutModal" class="modal" hidden>
+    <div class="modal-card" style="max-width: 450px; text-align: center;">
+        <div class="modal-header" style="justify-content: center;">
+            <h2>Plan Brygad - System Zarządzania</h2>
+        </div>
+        <div style="padding: 20px 0;">
+            <div style="font-size: 3rem; margin-bottom: 10px;">🏗️</div>
+            <p style="font-size: 1.3rem; color: var(--text-bright); margin: 5px 0;">
+                Wersja: <strong id="aboutVersion">-</strong>
+            </p>
+            <p style="font-size: 0.9rem; color: var(--text-main); margin: 5px 0;">
+                Data kompilacji: <span id="aboutBuild">-</span>
+            </p>
+            <p style="font-size: 0.8rem; color: var(--text-main); margin-top: 15px;">
+                © <span id="copyrightYear">2024</span> KBRInvest sp. z o.o.<br>
+                Wszelkie prawa zastrzeżone.<br><br>
+                <span style="color: #64748b;">Pomoc techniczna:</span><br>
+                <a href="mailto:helpdesk@kbrinvest.pl" style="color: var(--accent); text-decoration: none; font-weight: 600;">helpdesk@kbrinvest.pl</a>
+            </p>
+        </div>
+        <div class="modal-actions" style="justify-content: center;">
+            <button class="modalClose primary" data-modal="aboutModal">Zamknij</button>
+        </div>
+    </div>
+</div>
+
   <div id="toast" class="toast" hidden></div>
   <script src="js/dashboard.js"></script>
 </body>
