@@ -425,7 +425,7 @@ select option {
 /* Style dla elementów w zespole (Ludzie/Zadania) */
 .team-member-item, .team-task-item {
   background: #0f172a;
-  padding: 10px 15px;
+  padding: 6px 20px;
   border-radius: 6px;
   font-size: 1.1rem;
   color: var(--text-bright);
